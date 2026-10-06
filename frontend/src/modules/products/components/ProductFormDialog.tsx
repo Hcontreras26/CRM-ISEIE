@@ -172,7 +172,7 @@ export default function ProductFormDialog({ open, onClose, product, onSubmit }: 
       setImageUrl(null);
       toast({ title: 'Imagen eliminada' });
     } catch (e: any) {
-      toast({ title: 'Error', description: e?.data?.error || e.message, variant: 'destructive' });
+      toast({ title: 'No se pudo eliminar la imagen', description: e?.data?.error || e.message, variant: 'destructive' });
     } finally {
       setImageUploading(false);
     }
@@ -212,7 +212,7 @@ export default function ProductFormDialog({ open, onClose, product, onSubmit }: 
           const msgs = Object.values(errs).map((e: any) => e?.message).filter(Boolean);
           toast({ title: 'Revisa el formulario', description: msgs.join(' · ') || 'Hay campos inválidos', variant: 'destructive' });
         })} className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="Nombre *" error={(errors as any).nombre?.message as any}>
               <input {...register('nombre')} placeholder={`Nombre del ${productoLabel.toLowerCase()}`} className={inputClass} />
             </Field>

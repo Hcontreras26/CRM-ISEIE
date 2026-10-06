@@ -191,7 +191,7 @@ function UsersSection({ isAdmin }) {
       const res = await client.get('/users?limit=100&incluirTodos=true');
       setUsers(res?.data || []);
     } catch (e) {
-      toast({ title: 'Error', description: e?.data?.error || 'No se pudieron cargar los usuarios', variant: 'destructive' });
+      toast({ title: 'No se pudieron cargar los usuarios', description: e?.data?.error, variant: 'destructive' });
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
@@ -212,7 +212,7 @@ function UsersSection({ isAdmin }) {
       toast({ title: activar ? '✓ Reactivado' : '✓ Desactivado' });
       await load();
     } catch (e) {
-      toast({ title: 'Error', description: e?.data?.error || e?.message, variant: 'destructive' });
+      toast({ title: activar ? 'No se pudo reactivar el usuario' : 'No se pudo desactivar el usuario', description: e?.data?.error || e?.message, variant: 'destructive' });
     }
   }
 
@@ -409,7 +409,7 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
         : { title: '✓ Guardado' });
       onSaved();
     } catch (e) {
-      toast({ title: 'Error', description: e?.data?.error || e?.message, variant: 'destructive' });
+      toast({ title: 'No se pudo guardar el usuario', description: e?.data?.error || e?.message, variant: 'destructive' });
     } finally { setSaving(false); }
   }
 
@@ -424,7 +424,7 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
       setNewPass('');
       setNewPass2('');
     } catch (e) {
-      toast({ title: 'Error', description: e?.data?.error || e?.message, variant: 'destructive' });
+      toast({ title: 'No se pudo cambiar la contraseña', description: e?.data?.error || e?.message, variant: 'destructive' });
     } finally { setSavingPass(false); }
   }
 
@@ -632,7 +632,7 @@ function InviteUserModal({ projects, onClose, onCreated, empresas, faltaMigracio
       toast({ title: '✓ Usuario invitado', description: 'Se le envió un email para crear su contraseña.' });
       onCreated();
     } catch (e) {
-      toast({ title: 'Error', description: e?.data?.error || e?.message || 'No se pudo crear el usuario', variant: 'destructive' });
+      toast({ title: 'No se pudo crear el usuario', description: e?.data?.error || e?.message, variant: 'destructive' });
     } finally { setSaving(false); }
   }
 
@@ -721,7 +721,7 @@ function AvailabilitySection() {
       toast({ title: value ? 'Gestor disponible' : 'Gestor pausado', description: user.nombre });
       await load();
     } catch (err) {
-      toast({ title: 'Error', description: err?.message, variant: 'destructive' });
+      toast({ title: 'No se pudo cambiar la disponibilidad', description: err?.message, variant: 'destructive' });
     }
   }
 

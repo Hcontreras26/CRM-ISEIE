@@ -214,7 +214,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
           </div>
 
           <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label={(customValues as any)?._sin_nombre ? 'Nombre (se generará automáticamente)' : 'Nombre *'} error={errors.nombre?.message}>
                 <input
                   {...register('nombre')}
@@ -275,7 +275,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Teléfono" error={errors.telefono?.message} hint="Opcional si pones email">
                 <div className="relative">
                   <input {...register('telefono')} placeholder="+34 600 000 000 (opcional)" className={inputClass + ' pr-14'} />
@@ -349,7 +349,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                 </div>
               </Field>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field label={`${productoLabel} de interes`}>
                 <Controller
                   name="producto_interes"
@@ -388,9 +388,9 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
             {customFields.length > 0 && (
               <div className="border-t border-border pt-3 mt-3 space-y-3">
                 <p className="text-xs text-muted-foreground text-muted-foreground">Campos personalizados</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {customFields.map(f => (
-                    <div key={f.id} className={f.type === 'textarea' ? 'col-span-2' : ''}>
+                    <div key={f.id} className={f.type === 'textarea' ? 'sm:col-span-2' : ''}>
                       <label className="text-xs text-muted-foreground text-muted-foreground mb-1.5 block px-1">
                         {f.label} {f.required && <span className="text-red-500">*</span>}
                       </label>

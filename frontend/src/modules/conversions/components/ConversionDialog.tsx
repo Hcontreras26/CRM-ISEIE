@@ -458,7 +458,7 @@ export default function ConversionDialog({ open, onClose, lead, projectId, onCre
                 <h3 className="font-semibold text-base">Venta registrada</h3>
                 <p className="text-sm text-muted-foreground mt-1">¿Generar un documento para el cliente y descargar el PDF?</p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button type="button" onClick={() => setDocPhase('proforma')}
                   className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border bg-card hover:border-primary hover:bg-muted/50 transition">
                   <FileText size={24} weight="duotone" className="text-primary" />
@@ -610,7 +610,7 @@ export default function ConversionDialog({ open, onClose, lead, projectId, onCre
               {form.iva_exento && <p className="text-[10px] text-muted-foreground italic">Operación exenta — art. 20 LIVA (servicios educativos)</p>}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] font-medium text-muted-foreground mb-1 block">
                   {useMultiItem ? 'Subtotal items (auto)' : 'Precio base (EUR) *'}
@@ -703,7 +703,7 @@ export default function ConversionDialog({ open, onClose, lead, projectId, onCre
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] font-medium text-muted-foreground mb-1 block">Metodo de pago</label>
                 <Select<MetodoPago>
@@ -744,7 +744,7 @@ export default function ConversionDialog({ open, onClose, lead, projectId, onCre
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <div>
                     <label className="text-[10px] font-medium text-muted-foreground mb-1 block">Número de cuotas</label>
                     <input

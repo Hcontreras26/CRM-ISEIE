@@ -305,7 +305,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
       onClose();
     } catch (err: unknown) {
       const e = err as { data?: { error?: string }; message?: string };
-      toast({ title: 'Error', description: e?.data?.error || e?.message || 'No se pudo registrar', variant: 'destructive' });
+      toast({ title: 'No se pudo registrar la venta', description: e?.data?.error || e?.message, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -489,7 +489,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
                   <input value={nombre} onChange={(e) => setNombre(e.target.value)}
                     className="w-full h-10 px-3 rounded-md border border-border bg-card text-sm" />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">Email</label>
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
@@ -514,7 +514,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
                   <input value={nombre} onChange={(e) => setNombre(e.target.value)}
                     className="w-full h-10 px-3 rounded-md border border-border bg-card text-sm" />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">Email</label>
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
@@ -578,7 +578,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Importe total *</label>
                   <input type="number" min="0" step="0.01" value={importeTotal}
@@ -594,7 +594,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Método de pago</label>
                   <select value={metodo} onChange={(e) => setMetodo(e.target.value)}
@@ -623,7 +623,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
                       Auto-distribuir
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-muted-foreground mb-1 block">N° de cuotas</label>
                       <input type="number" min={2} max={36} value={numCuotas}

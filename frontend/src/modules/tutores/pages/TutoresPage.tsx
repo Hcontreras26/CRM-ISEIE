@@ -988,7 +988,7 @@ export default function TutoresPage() {
             />
             <input type="hidden" name="productId" value={cursoColab ?? ''} />
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <label className="text-xs text-muted-foreground">
                 Porcentaje
                 <input name="pct" type="number" step="0.5" min="0" max="100" defaultValue="10" required
@@ -1045,7 +1045,7 @@ export default function TutoresPage() {
                 className="mt-1 w-full h-9 px-3 rounded-md border border-border bg-background text-sm font-normal" />
             </label>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label className="block text-xs font-medium">
                 DNI / NIF
                 <input value={datos.dniNif}
@@ -1152,7 +1152,7 @@ export default function TutoresPage() {
               </button>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <label className="text-xs text-muted-foreground">
                 Porcentaje
                 <input name="pct" type="number" step="0.5" min="0" max="100" required
