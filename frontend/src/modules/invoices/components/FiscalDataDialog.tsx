@@ -229,7 +229,7 @@ export default function FiscalDataDialog({ projectId, leadId, conversionId, defa
 
             <Section title="Pago">
               <div>
-                <label className="text-[11px] text-muted-foreground">Método de pago <span className="text-red-500">*</span></label>
+                <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Método de pago <span className="text-red-500">*</span></label>
                 <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value as 'transferencia')}
                   className="w-full h-9 px-2 rounded border border-border bg-background text-sm">
                   <option value="transferencia">Transferencia bancaria</option>
@@ -244,7 +244,7 @@ export default function FiscalDataDialog({ projectId, leadId, conversionId, defa
                 </select>
               </div>
               <div>
-                <label className="text-[11px] text-muted-foreground">Pie de pago (instrucciones / IBAN / etc)</label>
+                <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Pie de pago (instrucciones / IBAN / etc)</label>
                 <textarea value={piePago} onChange={(e) => setPiePago(e.target.value)} rows={3}
                   placeholder="Ej: IBAN ES12 3456 …  /  Pago a 30 días"
                   className="w-full px-2 py-1.5 rounded border border-border bg-background text-sm" />
@@ -287,7 +287,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Field({ label, value, onChange, required }: { label: string; value: string; onChange: (v: string) => void; required?: boolean }) {
   return (
     <div>
-      <label className="text-[11px] text-muted-foreground">{label}{required && <span className="text-red-500"> *</span>}</label>
+      <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">{label}{required && <span className="text-red-500"> *</span>}</label>
       <input value={value} onChange={(e) => onChange(e.target.value)}
         className={`w-full h-9 px-2 rounded border bg-background text-sm ${required && !value ? 'border-red-300' : 'border-border'}`} />
     </div>

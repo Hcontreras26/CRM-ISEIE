@@ -355,7 +355,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
               <div className="space-y-3">
                 {!selectedClient ? (
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Buscar cliente *</label>
+                    <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Buscar cliente *</label>
                     <div className="relative">
                       <MagnifyingGlass size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                       <input
@@ -417,7 +417,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
               <div className="space-y-3">
                 {!selectedClient ? (
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Buscar el prospecto *</label>
+                    <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Buscar el prospecto *</label>
                     <div className="relative">
                       <MagnifyingGlass size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                       <input
@@ -485,19 +485,19 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
                   nombre basta.
                 </p>
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Nombre del cliente *</label>
+                  <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Nombre del cliente *</label>
                   <input value={nombre} onChange={(e) => setNombre(e.target.value)}
                     className="w-full h-10 px-3 rounded-md border border-border bg-card text-sm" />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Email</label>
+                    <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Email</label>
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                       placeholder="opcional"
                       className="w-full h-10 px-3 rounded-md border border-border bg-card text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Teléfono</label>
+                    <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Teléfono</label>
                     <input value={telefono} onChange={(e) => setTelefono(e.target.value)}
                       placeholder="opcional"
                       className="w-full h-10 px-3 rounded-md border border-border bg-card text-sm" />
@@ -510,19 +510,19 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
             {mode === 'new' && (
               <div className="space-y-3">
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Nombre del cliente *</label>
+                  <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Nombre del cliente *</label>
                   <input value={nombre} onChange={(e) => setNombre(e.target.value)}
                     className="w-full h-10 px-3 rounded-md border border-border bg-card text-sm" />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Email</label>
+                    <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Email</label>
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
                       placeholder="correo@ejemplo.com"
                       className="w-full h-10 px-3 rounded-md border border-border bg-card text-sm" />
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Teléfono</label>
+                    <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Teléfono</label>
                     <input value={telefono} onChange={(e) => setTelefono(e.target.value)}
                       placeholder="+34..."
                       className="w-full h-10 px-3 rounded-md border border-border bg-card text-sm" />
@@ -535,7 +535,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
             {/* Datos fiscales (opcionales, común a ambos modos) */}
             <div className="space-y-2">
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">
+                <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">
                   Identificación fiscal <span className="text-muted-foreground/70">(opcional)</span>
                 </label>
                 <input
@@ -547,7 +547,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">
+                <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">
                   Dirección fiscal <span className="text-muted-foreground/70">(opcional)</span>
                 </label>
                 <textarea
@@ -565,7 +565,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
             {/* Producto + importes (común a ambos modos) */}
             <div className="border-t border-border pt-3 space-y-3">
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Producto *</label>
+                <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Producto *</label>
                 <input value={productSearch} onChange={(e) => setProductSearch(e.target.value)}
                   placeholder="Buscar producto…"
                   className="w-full h-10 px-3 rounded-md border border-border bg-card text-sm mb-1.5" />
@@ -580,13 +580,13 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Importe total *</label>
+                  <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Importe total *</label>
                   <input type="number" min="0" step="0.01" value={importeTotal}
                     onChange={(e) => setImporteTotal(e.target.value)}
                     className="w-full h-10 px-3 rounded-md border border-border bg-card text-sm" />
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Importe pagado</label>
+                  <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Importe pagado</label>
                   <input type="number" min="0" step="0.01" value={importePagado}
                     onChange={(e) => setImportePagado(e.target.value)}
                     placeholder={`Por defecto: ${importeTotal || 'igual al total'}`}
@@ -596,14 +596,14 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Método de pago</label>
+                  <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Método de pago</label>
                   <select value={metodo} onChange={(e) => setMetodo(e.target.value)}
                     className="w-full h-10 px-3 rounded-md border border-border bg-card text-sm">
                     {PAYMENT_METHODS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">
+                  <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">
                     Fecha de pago *
                     {isRetroactiva && <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">Histórica</span>}
                   </label>
@@ -625,13 +625,13 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">N° de cuotas</label>
+                      <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">N° de cuotas</label>
                       <input type="number" min={2} max={36} value={numCuotas}
                         onChange={(e) => { setNumCuotas(parseInt(e.target.value) || 2); setInstallmentsDirty(false); }}
                         className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm" />
                     </div>
                     <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">1ª fecha de vencimiento</label>
+                      <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">1ª fecha de vencimiento</label>
                       <input type="date" value={fechaPrimeraCuota}
                         onChange={(e) => { setFechaPrimeraCuota(e.target.value); setInstallmentsDirty(false); }}
                         className="w-full h-9 px-3 rounded-md border border-border bg-card text-sm" />
@@ -671,7 +671,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
               )}
 
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Notas (opcional)</label>
+                <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Notas (opcional)</label>
                 <textarea value={notas} onChange={(e) => setNotas(e.target.value)} rows={2}
                   placeholder="Comentarios sobre la venta…"
                   className="w-full px-3 py-2 rounded-md border border-border bg-card text-sm resize-none" />

@@ -24,7 +24,7 @@ const textoError = (e: any): string | undefined =>
 function Field({ label, error, hint, children }: { label: string; error?: string; hint?: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-xs text-muted-foreground mb-1.5 block px-1">{label}</label>
+      <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">{label}</label>
       {children}
       {hint && <p className="text-[11px] text-muted-foreground mt-1 px-1">{hint}</p>}
       {error && <p className="text-xs text-red-500 mt-1 px-1">{error}</p>}

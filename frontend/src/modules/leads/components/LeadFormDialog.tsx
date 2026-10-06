@@ -47,7 +47,7 @@ function Field({ label, error, hint, children, required }: { label: string; erro
   const isRequired = required || trimmed !== label;
   return (
     <div>
-      <label className="text-xs text-muted-foreground mb-1.5 block px-1">
+      <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">
         {trimmed}
         {isRequired && <span className="text-rose-500 font-bold ml-0.5">*</span>}
       </label>
@@ -391,7 +391,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {customFields.map(f => (
                     <div key={f.id} className={f.type === 'textarea' ? 'sm:col-span-2' : ''}>
-                      <label className="text-xs text-muted-foreground text-muted-foreground mb-1.5 block px-1">
+                      <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">
                         {f.label} {f.required && <span className="text-red-500">*</span>}
                       </label>
                       {f.type === 'textarea' ? (

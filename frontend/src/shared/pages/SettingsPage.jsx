@@ -441,11 +441,11 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
         </div>
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Nombre</label>
+            <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Nombre</label>
             <input value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full h-9 px-3 rounded-md border border-border bg-background text-sm" />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Email</label>
+            <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Email</label>
             <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" maxLength={255}
               readOnly={!isSuperadmin} disabled={!isSuperadmin}
               className={`w-full h-9 px-3 rounded-md border border-border bg-background text-sm ${isSuperadmin ? '' : 'opacity-60 cursor-not-allowed'}`} />
@@ -471,7 +471,7 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
             ))}
           </div>
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Rol</label>
+            <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Rol</label>
             <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full h-9 px-3 rounded-md border border-border bg-background text-sm">
               <option value="gestor">Gestor</option>
               <option value="admin">Admin</option>
@@ -481,7 +481,7 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
             </select>
           </div>
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Y además es…</label>
+            <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Y además es…</label>
             {/* Mas de un rol por persona: quien lleva prospectos y ademas da
                 clase no tiene que elegir. Solo SUMAN permisos; el principal
                 sigue siendo el de arriba. */}
@@ -507,12 +507,12 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
             </p>
           </div>
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Teléfono (WhatsApp)</label>
+            <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Teléfono (WhatsApp)</label>
             <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+34 600 000 000" className="w-full h-9 px-3 rounded-md border border-border bg-background text-sm" />
             <p className="text-[10px] text-muted-foreground mt-1">Se usa para el widget de WhatsApp y el contacto del gestor.</p>
           </div>
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Proyectos asignados</label>
+            <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Proyectos asignados</label>
             {/* Agrupados por empresa, con «Marcar todos» y, para un admin, la
                 empresa entera con los campus que se creen (#220). */}
             <CampusPorEmpresa
@@ -646,15 +646,15 @@ function InviteUserModal({ projects, onClose, onCreated, empresas, faltaMigracio
         </div>
         <div className="space-y-3">
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Nombre y apellido *</label>
+            <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Nombre y apellido *</label>
             <input value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full h-9 px-3 rounded-md border border-border bg-background text-sm" placeholder="Ej: Fabiola Comercial" />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Email *</label>
+            <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Email *</label>
             <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className="w-full h-9 px-3 rounded-md border border-border bg-background text-sm" placeholder="persona@empresa.com" />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Rol *</label>
+            <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Rol *</label>
             <select value={role} onChange={(e) => setRole(e.target.value)} className="w-full h-9 px-3 rounded-md border border-border bg-background text-sm">
               <option value="gestor">Gestor — solo sus proyectos y leads</option>
               <option value="admin">Admin — acceso operativo completo</option>
@@ -663,7 +663,7 @@ function InviteUserModal({ projects, onClose, onCreated, empresas, faltaMigracio
             </select>
           </div>
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Proyectos asignados{(role === 'admin' || role === 'gestor') && ' *'}</label>
+            <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">Proyectos asignados{(role === 'admin' || role === 'gestor') && ' *'}</label>
             {/* Agrupados por empresa, con «Marcar todos» y, para un admin, la
                 empresa entera con los campus que se creen (#220). */}
             <CampusPorEmpresa
@@ -834,15 +834,15 @@ function AvailabilitySection() {
                   <div className="bg-muted/30 px-4 py-3 space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1.5fr_auto] gap-2 items-end">
                       <div>
-                        <label className="block text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Desde</label>
+                        <label className="mb-1.5 block px-1 text-secundario uppercase tracking-wider font-bold text-muted-foreground">Desde</label>
                         <input type="date" value={newBlock.fecha_inicio} onChange={(e) => setNewBlock({ ...newBlock, fecha_inicio: e.target.value })} className="w-full h-8 px-2 rounded-md border border-border bg-card text-xs" />
                       </div>
                       <div>
-                        <label className="block text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Hasta</label>
+                        <label className="mb-1.5 block px-1 text-secundario uppercase tracking-wider font-bold text-muted-foreground">Hasta</label>
                         <input type="date" value={newBlock.fecha_fin} onChange={(e) => setNewBlock({ ...newBlock, fecha_fin: e.target.value })} className="w-full h-8 px-2 rounded-md border border-border bg-card text-xs" />
                       </div>
                       <div>
-                        <label className="block text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Motivo</label>
+                        <label className="mb-1.5 block px-1 text-secundario uppercase tracking-wider font-bold text-muted-foreground">Motivo</label>
                         <input type="text" value={newBlock.motivo} onChange={(e) => setNewBlock({ ...newBlock, motivo: e.target.value })} placeholder="Vacaciones, baja, formación…" className="w-full h-8 px-2 rounded-md border border-border bg-card text-xs" />
                       </div>
                       <button onClick={() => addBlock(u.id)} className="h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90">+ Añadir</button>
@@ -1032,7 +1032,7 @@ function IntegrationsSection({ isAdmin }) {
                 <X size={16} weight="bold" />
               </button>
             </div>
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+            <label className="mb-1.5 block px-1 text-secundario font-bold uppercase tracking-wider text-muted-foreground">
               {editing.label}
             </label>
             <input
