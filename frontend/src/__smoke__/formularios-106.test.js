@@ -58,9 +58,7 @@ describe('formato de los formularios (#106)', () => {
       'src/modules/expenses/pages/ExpensesPage.tsx',
       'src/modules/field-definitions/components/CustomFieldRenderer.tsx',
       'src/modules/leads/components/lead-detail/InfoField.tsx',
-      'src/modules/leads/components/LeadFormDialog.tsx',
       'src/modules/leads/components/ProductCombobox.tsx',
-      'src/modules/products/components/ProductFormDialog.tsx',
     ];
     expect(definen.filter((r) => !PENDIENTES.includes(r))).toEqual(['src/shared/lib/ui.ts']);
   });

@@ -8,6 +8,7 @@ import { useProducts } from '@/modules/products/hooks/useProducts';
 import { X, Warning, Link as LinkIcon } from '@phosphor-icons/react';
 import Portal from '@/shared/components/ui/portal';
 import Select from '@/shared/components/ui/Select';
+import { inputClass } from '@/shared/lib/ui';
 import ProductCombobox from './ProductCombobox';
 import client from '@/shared/api/client';
 import { detectCountryFromPhone } from '../lib/phoneCountry';
@@ -58,7 +59,6 @@ function Field({ label, error, hint, children, required }: { label: string; erro
   );
 }
 
-const inputClass = 'w-full h-9 px-3 rounded-md border border-border bg-muted/50 text-sm outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 focus:bg-card placeholder:text-muted-foreground';
 
 export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props) {
   useEscapeKey(onClose, open);

@@ -5,6 +5,7 @@ import { productSchema } from '../validation/product.schema';
 import { X, CurrencyEur, Image as ImageIcon, UploadSimple, Trash } from '@phosphor-icons/react';
 import Portal from '@/shared/components/ui/portal';
 import Select from '@/shared/components/ui/Select';
+import { inputClass } from '@/shared/lib/ui';
 import client from '@/shared/api/client';
 import { useProjectContext } from '@/contexts/ProjectContext';
 import { useEscapeKey } from '@/shared/hooks/useDialogA11y';
@@ -12,7 +13,6 @@ import { uploadProductImage, deleteProductImage, getProductImageUrl } from '../a
 import { toast } from '@/shared/hooks/useToast';
 import { useConfirm } from '@/shared/components/ui/useConfirm';
 
-const inputClass = 'w-full h-9 px-3 rounded-md border border-border bg-muted/50 text-sm outline-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 focus:bg-card placeholder:text-muted-foreground';
 const smallInput = 'w-full h-9 px-3 rounded-lg border border-border bg-muted/50 text-sm outline-none focus:border-primary';
 
 // react-hook-form no siempre devuelve un string en `.message`: con campos que
