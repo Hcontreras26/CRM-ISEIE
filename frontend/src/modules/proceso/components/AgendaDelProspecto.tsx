@@ -145,7 +145,8 @@ export default function AgendaDelProspecto({
   // uno anterior al proceso, no tiene agenda y una tarjeta vacía solo estorba.
   if (!pasos || pasos.length === 0) return null;
 
-  const siguiente = pasos.find((p) => !p.hecho && p.estado === 'pendiente') || null;
+  // El que ya cubrio un contacto no cuenta (13/10): es el mismo paso que la cola.
+  const siguiente = pasos.find((p) => !p.hecho && p.estado === 'pendiente' && !p.con_contacto) || null;
   const hechos = pasos.filter((p) => p.hecho).length;
 
   return (
@@ -255,7 +256,9 @@ export default function AgendaDelProspecto({
         </div>
       ) : (
         <p className="mb-3 text-[11px] text-muted-foreground">
-          No queda ningún paso pendiente con esta persona.
+          {pasos.some((p) => !p.hecho && p.estado === 'pendiente')
+            ? 'Al día: los pasos que quedan ya tienen un contacto apuntado. Táchalos cuando estén dados.'
+            : 'No queda ningún paso pendiente con esta persona.'}
         </p>
       )}
 

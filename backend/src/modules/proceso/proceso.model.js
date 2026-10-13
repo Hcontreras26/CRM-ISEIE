@@ -253,7 +253,12 @@ export async function pasosDeLead(leadId) {
     dias_de_retraso: Number(r.dias_de_retraso),
     // Un paso vence solo si no esta hecho ni saltado. Uno hecho tarde ya no
     // urge: urge el siguiente.
-    vencido: !r.hecho && r.estado === 'pendiente' && Number(r.dias_de_retraso) > 0,
+    //
+    // Ni uno que ya cubrio un CONTACTO (Diego, 13/10: «aparecen atrasados de muy
+    // atrás»). Desde la checklist manual (09/10) ese paso sigue «por hacer» para
+    // tacharlo, pero la cola ya no lo cuenta: la ficha y la cola no pueden decir
+    // cosas distintas de la misma persona.
+    vencido: !r.hecho && r.estado === 'pendiente' && !r.con_contacto && Number(r.dias_de_retraso) > 0,
   }));
 }
 
