@@ -45,6 +45,19 @@ export interface Colaboracion {
   modulos_pct: number;
 }
 
+/** Lo que contesta «Cobra desde»: que formaciones se movieron y cuales no. */
+export interface ResultadoCobraDesde {
+  desde: string;
+  /** Colaboraciones activas que tenia. */
+  total: number;
+  cambiadas: Array<{ id: number; formacion: string; antes: string; desde: string }>;
+  /** Las que no se movieron, con el motivo: solaparian con otro tramo suyo de
+   *  esa formacion, o terminarian antes de empezar. */
+  noCambiadas: Array<{ id: number; formacion: string; desde: string; hasta: string | null; motivo: string }>;
+  /** Las que ya tenian esa fecha. */
+  sinCambio: number;
+}
+
 export interface LineaSimulacion {
   tutor_id: number;
   tutor: string;
@@ -228,6 +241,11 @@ export const tutoresApi = {
 
   editarColaboracion: (id: number, datos: Record<string, unknown>) =>
     client.patch(`/tutores/colaboraciones/${id}`, datos) as Promise<ApiResponse<Colaboracion>>,
+
+  /** «Cobra desde» (Diego, 13/10): la misma fecha de inicio para TODAS sus
+   *  colaboraciones activas. No genera comisiones: eso es «Calcular». */
+  cambiarCobraDesde: (tutorId: number, desde: string) =>
+    client.patch(`/tutores/${tutorId}/cobra-desde`, { desde }) as Promise<ApiResponse<ResultadoCobraDesde>>,
 
   borrarColaboracion: (id: number) =>
     client.delete(`/tutores/colaboraciones/${id}`) as Promise<ApiResponse<{ borrada: boolean; desactivada: boolean; comisiones: number }>>,
