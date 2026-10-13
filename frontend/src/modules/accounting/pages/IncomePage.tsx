@@ -1,5 +1,5 @@
 import { useEffect, useState, lazy, Suspense } from 'react';
-import RangoRapido from '@/shared/components/ui/RangoRapido';
+import RangoRapido, { rangoDe } from '@/shared/components/ui/RangoRapido';
 import { useNavigate } from 'react-router-dom';
 import client from '@/shared/api/client';
 import { useProjectContext } from '@/contexts/ProjectContext';
@@ -10,6 +10,8 @@ import EmptyState from '@/shared/components/ui/EmptyState';
 import SkeletonTable from '@/shared/components/ui/SkeletonTable';
 import { CurrencyEur, ArrowRight, Receipt, CheckCircle, Plus, GraduationCap } from '@phosphor-icons/react';
 import { formatDate } from '@/shared/lib/format';
+// Los nombres de curso guardados antes del #234 llevan «&amp;»: se enseñan con la letra.
+import { decodificarEntidades } from '@/shared/lib/entidadesHtml';
 // Las metas son mensuales: el mes que toque segun el filtro de fechas.
 import { mesDe } from '@/modules/sales/components/FiltroPeriodo';
 
@@ -27,36 +29,11 @@ const PER_PAGE = 50;
 /*
   Los atajos de fecha.
 
-  `toISOString()` NO sirve aqui: pasa a UTC, y en España a partir de las 22:00
-  «hoy» se convierte en mañana. Un atajo que enseña el dia equivocado por la
-  noche es peor que no tenerlo, asi que la fecha se arma con los numeros locales.
+  Los pinta y los calcula `RangoRapido`, el componente compartido. Esta pantalla
+  tenía su propia copia de los seis —con las mismas cuentas escritas otra vez—
+  Y ADEMÁS el componente, así que salían dos filas de «Hoy · Ayer · …» (#234,
+  igual que Ventas en el #223). Queda una, la del componente.
 */
-const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-const sumaDias = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
-
-/* «Esta semana» empieza en LUNES, no en domingo: es la semana con la que se
-   trabaja aqui. getDay() da 0 para el domingo, de ahi el ajuste. */
-const lunesDe = (d) => sumaDias(d, -((d.getDay() + 6) % 7));
-
-function atajosDeFecha() {
-  const hoy = new Date();
-  const ayer = sumaDias(hoy, -1);
-  const lunes = lunesDe(hoy);
-  const lunesPasado = sumaDias(lunes, -7);
-  const primeroDeMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-  const finMesPasado = sumaDias(primeroDeMes, -1);
-  const primeroMesPasado = new Date(finMesPasado.getFullYear(), finMesPasado.getMonth(), 1);
-  return [
-    { id: 'hoy', texto: 'Hoy', from: iso(hoy), to: iso(hoy) },
-    { id: 'ayer', texto: 'Ayer', from: iso(ayer), to: iso(ayer) },
-    // De lunes a HOY, no a domingo: enseñar dias que aun no han pasado hace
-    // parecer que la semana va peor de lo que va.
-    { id: 'semana', texto: 'Esta semana', from: iso(lunes), to: iso(hoy) },
-    { id: 'semana_pasada', texto: 'Semana pasada', from: iso(lunesPasado), to: iso(sumaDias(lunes, -1)) },
-    { id: 'mes', texto: 'Este mes', from: iso(primeroDeMes), to: iso(hoy) },
-    { id: 'mes_pasado', texto: 'Mes pasado', from: iso(primeroMesPasado), to: iso(finMesPasado) },
-  ];
-}
 
 
 
@@ -120,11 +97,10 @@ export default function IncomePage({ title = 'Ingresos', subtitlePrefix = 'Todas
     facturadoEnPeriodo: { n: 0, importe: 0 },
     cobrosDelPeriodo: { matricula: { n: 0, importe: 0 }, cuotas: { n: 0, importe: 0 } }, facturasPorClase: { venta: { n: 0, importe: 0 }, cuota: { n: 0, importe: 0 }, parte: { n: 0, importe: 0 }, suelta: { n: 0, importe: 0 } }, porProyecto: [],
   });
-  const atajos = atajosDeFecha();
   // Por defecto, ESTE MES. Diego: «por defecto es este mes». Sin fechas la
   // lista era el historico entero, y la etiqueta venta/cuota solo tiene sentido
   // con un periodo: asi la pantalla abre ya con la lista mezclada y etiquetada.
-  const esteMes = atajos.find((a) => a.id === 'mes') || { from: '', to: '' };
+  const esteMes = rangoDe('mes');
   const [rango, setRango] = useState({ from: esteMes.from, to: esteMes.to });
   // La lista de abajo con fechas puestas: ventas + cuotas facturadas, cada una
   // con su etiqueta. Sin fechas, la lista sigue siendo la de ventas.
@@ -317,11 +293,10 @@ export default function IncomePage({ title = 'Ingresos', subtitlePrefix = 'Todas
                 className="h-9 px-3 rounded-md border border-border bg-card text-sm font-medium min-w-[200px] max-w-[320px]"
               >
                 <option value="all">— Todos los cursos —</option>
-                {cursos.map((c) => <option key={c} value={c}>{c}</option>)}
+                {cursos.map((c) => <option key={c} value={c}>{decodificarEntidades(c)}</option>)}
               </select>
             </>
           )}
-          <RangoRapido valor={rango} alElegir={(r) => setRango(r)} />
           <label className="text-xs font-semibold text-muted-foreground">Desde:</label>
           <input type="date" value={rango.from} onChange={(e) => setRango((v) => ({ ...v, from: e.target.value }))}
             className="h-9 px-2 rounded-md border border-border bg-card text-sm" />
@@ -338,22 +313,9 @@ export default function IncomePage({ title = 'Ingresos', subtitlePrefix = 'Todas
               queden escondidos al final de una fila larga de filtros. */}
           <div className="basis-full flex flex-wrap items-center gap-1.5 pt-1">
             <span className="text-xs font-semibold text-muted-foreground mr-0.5">Rápido:</span>
-            {atajos.map((a) => {
-              const puesto = rango.from === a.from && rango.to === a.to;
-              return (
-                <button key={a.id} type="button"
-                  onClick={() => setRango(puesto ? { from: '', to: '' } : { from: a.from, to: a.to })}
-                  // Se dice el periodo exacto que coge: «Semana pasada» no
-                  // significa lo mismo para todo el mundo.
-                  title={`${a.from} → ${a.to}`}
-                  className={`h-7 px-2.5 rounded-md border text-xs font-medium transition-colors ${
-                    puesto
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border text-muted-foreground hover:bg-muted'}`}>
-                  {a.texto}
-                </button>
-              );
-            })}
+            {/* Una sola fila de atajos: la del componente compartido, que ya dice
+                al pasar por encima el periodo exacto que coge. */}
+            <RangoRapido valor={rango} alElegir={setRango} />
           </div>
         </div>
       )}
@@ -581,7 +543,7 @@ export default function IncomePage({ title = 'Ingresos', subtitlePrefix = 'Todas
                         <td className="px-3 py-1.5 whitespace-nowrap">{formatDate(q.fecha)}</td>
                         <td className="px-3 py-1.5">{q.cliente || 'Sin nombre'}</td>
                         <td className="px-3 py-1.5 hidden md:table-cell max-w-[280px] truncate"
-                          title={q.producto || ''}>{q.producto || '—'}</td>
+                          title={decodificarEntidades(q.producto) || ''}>{decodificarEntidades(q.producto) || '—'}</td>
                         <td className="px-3 py-1.5 whitespace-nowrap text-muted-foreground">
                           {formatDate(q.fecha_de_la_venta)}
                         </td>
@@ -665,7 +627,7 @@ export default function IncomePage({ title = 'Ingresos', subtitlePrefix = 'Todas
                       )}
                     </td>
                     <td className="px-4 py-3 font-semibold">{r.cliente || 'Sin nombre'}</td>
-                    <td className="px-4 py-3">{r.producto || '—'}</td>
+                    <td className="px-4 py-3">{decodificarEntidades(r.producto) || '—'}</td>
                     <td className="px-4 py-3 text-right tabular-nums">{fmt(r.total)}</td>
                     <td className="px-4 py-3 text-right tabular-nums text-green-600 dark:text-green-400">{fmt(r.pagado)}</td>
                     <td className="px-4 py-3 text-xs whitespace-nowrap">
@@ -705,7 +667,7 @@ export default function IncomePage({ title = 'Ingresos', subtitlePrefix = 'Todas
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2"><Tipo tipo={r.tipo} compartida={r.compartida} /><span className="font-semibold truncate">{r.cliente || 'Sin nombre'}</span></div>
-                    <div className="text-xs text-muted-foreground truncate">{r.producto || '—'}</div>
+                    <div className="text-xs text-muted-foreground truncate">{decodificarEntidades(r.producto) || '—'}</div>
                   </div>
                   <span className={`px-2 py-0.5 rounded text-[10px] font-medium flex-shrink-0 ${
                     r.estado === 'pagado' ? 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400' :
