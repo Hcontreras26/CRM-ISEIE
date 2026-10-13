@@ -11,6 +11,7 @@ import client from '@/shared/api/client';
 import { toast } from '@/shared/hooks/useToast';
 import { useConfirm } from '@/shared/components/ui/useConfirm';
 import MarcaSection from './MarcaSection';
+import CampusPorEmpresa, { marcarVarios } from '@/shared/components/CampusPorEmpresa';
 import { avisoCambioCorreo, confirmacionCambioCorreo, problemaDeContrasena } from '@/shared/lib/credenciales';
 
 // Cada item de la nav interna. Si tiene `external: true` se muestra con el
@@ -166,7 +167,17 @@ const ROLE_BADGE = {
 };
 
 function UsersSection({ isAdmin }) {
-  const { projects } = useAuth();
+  const { projects, user: me } = useAuth();
+  // Las empresas, para dar una entera a un admin (#220). Solo el super admin:
+  // al resto el servidor no se lo deja guardar, así que ni se piden.
+  const esSuperadmin = me?.role === 'superadmin';
+  const [empresas, setEmpresas] = useState(undefined);
+  useEffect(() => {
+    if (!esSuperadmin) return;
+    client.get('/projects/sociedades')
+      .then((r) => setEmpresas((r?.data || []).map((e) => ({ id: Number(e.id), razon_social: e.razon_social }))))
+      .catch(() => setEmpresas(undefined));
+  }, [esSuperadmin]);
   const confirm = useConfirm();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -183,6 +194,8 @@ function UsersSection({ isAdmin }) {
     } finally { setLoading(false); }
   }
   useEffect(() => { load(); }, []);
+  // Sin la migración 203 el listado trae `empresa_ids: null` en todos.
+  const faltaMigracionEmpresas = users.length > 0 && users.every((u) => u.empresa_ids == null);
 
   async function toggleActive(u) {
     const activar = !u.active;
@@ -293,6 +306,8 @@ function UsersSection({ isAdmin }) {
       {showInvite && (
         <InviteUserModal
           projects={projects || []}
+          empresas={esSuperadmin ? empresas : undefined}
+          faltaMigracionEmpresas={faltaMigracionEmpresas}
           onClose={() => setShowInvite(false)}
           onCreated={() => { setShowInvite(false); load(); }}
         />
@@ -301,6 +316,8 @@ function UsersSection({ isAdmin }) {
         <EditUserModal
           user={editingUser}
           projects={projects || []}
+          empresas={esSuperadmin ? empresas : undefined}
+          faltaMigracionEmpresas={faltaMigracionEmpresas}
           onClose={() => setEditingUser(null)}
           onSaved={() => { setEditingUser(null); load(); }}
         />
@@ -309,7 +326,7 @@ function UsersSection({ isAdmin }) {
   );
 }
 
-function EditUserModal({ user, projects, onClose, onSaved }) {
+function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigracionEmpresas = false }) {
   const { user: me } = useAuth();
   const isSuperadmin = me?.role === 'superadmin';
   const [nombre, setNombre] = useState(user.nombre || '');
@@ -334,6 +351,20 @@ function EditUserModal({ user, projects, onClose, onSaved }) {
   const [newPass2, setNewPass2] = useState('');
   const [saving, setSaving] = useState(false);
   const [savingPass, setSavingPass] = useState(false);
+  // Las empresas enteras (#220). Diego, 10/10: «Un admin puede tener los
+  // proyectos futuros, pero de SU empresa». Solo las da el super admin.
+  const puedeDarEmpresas = Array.isArray(empresas) && !faltaMigracionEmpresas;
+  const [empresasEnteras, setEmpresasEnteras] = useState(Array.isArray(user.empresa_ids) ? user.empresa_ids : []);
+  // Al marcarla se marcan ya sus campus de hoy (es lo que guardará el
+  // servidor). Al quitarla NO se desmarcan: conserva lo que tiene.
+  function alternarEmpresa(issuerId) {
+    const entera = empresasEnteras.includes(issuerId);
+    setEmpresasEnteras((prev) => (entera ? prev.filter((x) => x !== issuerId) : [...prev, issuerId]));
+    if (!entera) {
+      const ids = projects.filter((p) => Number(p.sociedad_emisora_id) === issuerId).map((p) => p.id);
+      setAssigned((a) => marcarVarios(a, ids, true));
+    }
+  }
 
   function toggleProject(pid) {
     setAssigned((a) => {
@@ -364,6 +395,9 @@ function EditUserModal({ user, projects, onClose, onSaved }) {
         nombre: nombre.trim(), role, roles_extra: rolesExtra.filter((r) => r !== role),
         ...(cambiaCorreo ? { email: correoNuevo, reenviarEnlace: reenviarEnlace && user.role !== 'tutor' } : {}),
         projects: projList, whatsapp_phone: phone.trim(),
+        // Las empresas enteras (#220), solo si las ha podido tocar. Para otro
+        // rol que no sea admin van vacías: una gestora no tiene empresa entera.
+        ...(puedeDarEmpresas ? { empresaIds: role === 'admin' ? empresasEnteras : [] } : {}),
         factura_manager: facturaManager,
         // Cambiar fechas sin poder facturar no sirve: esa pantalla se abre desde
         // la factura. Si cae lo primero, cae lo segundo.
@@ -476,33 +510,20 @@ function EditUserModal({ user, projects, onClose, onSaved }) {
           </div>
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">Proyectos asignados</label>
-            {projects.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">No hay proyectos disponibles.</p>
-            ) : (
-              <div className="space-y-1.5 max-h-40 overflow-y-auto border border-border rounded-md p-2">
-                {projects.map((p) => {
-                  const checked = p.id in assigned;
-                  return (
-                    <div key={p.id} className="flex items-center justify-between gap-2">
-                      <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input type="checkbox" checked={checked} onChange={() => toggleProject(p.id)} />
-                        {p.nombre}
-                      </label>
-                      {checked && (
-                        (role === 'admin' || role === 'superadmin') ? (
-                          <label className="flex items-center gap-1 text-[11px] text-muted-foreground cursor-pointer">
-                            <input type="checkbox" checked={!!assigned[p.id]} onChange={(e) => setAssigned((a) => ({ ...a, [p.id]: e.target.checked }))} />
-                            recibe leads
-                          </label>
-                        ) : role === 'gestor' ? (
-                          <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">recibe leads</span>
-                        ) : null
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            {/* Agrupados por empresa, con «Marcar todos» y, para un admin, la
+                empresa entera con los campus que se creen (#220). */}
+            <CampusPorEmpresa
+              projects={projects}
+              assigned={assigned}
+              role={role}
+              onToggle={toggleProject}
+              onSetRecibe={(pid, v) => setAssigned((a) => ({ ...a, [pid]: v }))}
+              onSetMany={(ids, marcar) => setAssigned((a) => marcarVarios(a, ids, marcar))}
+              empresas={empresas}
+              empresasEnteras={empresasEnteras}
+              onToggleEmpresa={empresas ? alternarEmpresa : undefined}
+              faltaMigracion={faltaMigracionEmpresas}
+            />
           </div>
         </div>
 
@@ -555,12 +576,26 @@ function EditUserModal({ user, projects, onClose, onSaved }) {
   );
 }
 
-function InviteUserModal({ projects, onClose, onCreated }) {
+function InviteUserModal({ projects, onClose, onCreated, empresas, faltaMigracionEmpresas = false }) {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('gestor');
   const [assigned, setAssigned] = useState({}); // { [projectId]: recibeLeads }
   const [saving, setSaving] = useState(false);
+  // Las empresas enteras (#220). Diego, 10/10: «Un admin puede tener los
+  // proyectos futuros, pero de SU empresa». Solo las da el super admin.
+  const puedeDarEmpresas = Array.isArray(empresas) && !faltaMigracionEmpresas;
+  const [empresasEnteras, setEmpresasEnteras] = useState([]);
+  // Al marcarla se marcan ya sus campus de hoy (es lo que guardará el
+  // servidor). Al quitarla NO se desmarcan: conserva lo que tiene.
+  function alternarEmpresa(issuerId) {
+    const entera = empresasEnteras.includes(issuerId);
+    setEmpresasEnteras((prev) => (entera ? prev.filter((x) => x !== issuerId) : [...prev, issuerId]));
+    if (!entera) {
+      const ids = projects.filter((p) => Number(p.sociedad_emisora_id) === issuerId).map((p) => p.id);
+      setAssigned((a) => marcarVarios(a, ids, true));
+    }
+  }
 
   function toggleProject(pid) {
     setAssigned((a) => {
@@ -574,9 +609,23 @@ function InviteUserModal({ projects, onClose, onCreated }) {
     if (nombre.trim().length < 2) { toast({ title: 'Nombre inválido', description: 'Mínimo 2 caracteres', variant: 'destructive' }); return; }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) { toast({ title: 'Email inválido', variant: 'destructive' }); return; }
     const projList = Object.entries(assigned).map(([projectId, recibeLeads]) => ({ projectId: Number(projectId), recibeLeads: !!recibeLeads }));
+    // Un admin o una gestora sin campus entraría a un CRM vacío (#220). Al
+    // admin le vale una empresa entera; a la gestora, no.
+    const conEmpresa = role === 'admin' && puedeDarEmpresas && empresasEnteras.length > 0;
+    if ((role === 'admin' || role === 'gestor') && projList.length === 0 && !conEmpresa) {
+      toast({
+        title: 'Falta el campus',
+        description: role === 'admin' && puedeDarEmpresas ? 'Marca al menos un campus o una empresa entera.' : 'Marca al menos un campus.',
+        variant: 'destructive',
+      });
+      return;
+    }
     setSaving(true);
     try {
-      await client.post('/users', { nombre: nombre.trim(), email: email.trim().toLowerCase(), role, projects: projList });
+      await client.post('/users', {
+        nombre: nombre.trim(), email: email.trim().toLowerCase(), role, projects: projList,
+        ...(conEmpresa ? { empresaIds: empresasEnteras } : {}),
+      });
       toast({ title: '✓ Usuario invitado', description: 'Se le envió un email para crear su contraseña.' });
       onCreated();
     } catch (e) {
@@ -610,34 +659,21 @@ function InviteUserModal({ projects, onClose, onCreated }) {
             </select>
           </div>
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Proyectos asignados</label>
-            {projects.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">No hay proyectos disponibles.</p>
-            ) : (
-              <div className="space-y-1.5 max-h-40 overflow-y-auto border border-border rounded-md p-2">
-                {projects.map((p) => {
-                  const checked = p.id in assigned;
-                  return (
-                    <div key={p.id} className="flex items-center justify-between gap-2">
-                      <label className="flex items-center gap-2 text-sm cursor-pointer">
-                        <input type="checkbox" checked={checked} onChange={() => toggleProject(p.id)} />
-                        {p.nombre}
-                      </label>
-                      {checked && (
-                        (role === 'admin' || role === 'superadmin') ? (
-                          <label className="flex items-center gap-1 text-[11px] text-muted-foreground cursor-pointer">
-                            <input type="checkbox" checked={!!assigned[p.id]} onChange={(e) => setAssigned((a) => ({ ...a, [p.id]: e.target.checked }))} />
-                            recibe leads
-                          </label>
-                        ) : role === 'gestor' ? (
-                          <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">recibe leads</span>
-                        ) : null
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <label className="text-xs text-muted-foreground mb-1 block">Proyectos asignados{(role === 'admin' || role === 'gestor') && ' *'}</label>
+            {/* Agrupados por empresa, con «Marcar todos» y, para un admin, la
+                empresa entera con los campus que se creen (#220). */}
+            <CampusPorEmpresa
+              projects={projects}
+              assigned={assigned}
+              role={role}
+              onToggle={toggleProject}
+              onSetRecibe={(pid, v) => setAssigned((a) => ({ ...a, [pid]: v }))}
+              onSetMany={(ids, marcar) => setAssigned((a) => marcarVarios(a, ids, marcar))}
+              empresas={empresas}
+              empresasEnteras={empresasEnteras}
+              onToggleEmpresa={empresas ? alternarEmpresa : undefined}
+              faltaMigracion={faltaMigracionEmpresas}
+            />
           </div>
         </div>
         <div className="flex justify-end gap-2 pt-1">
