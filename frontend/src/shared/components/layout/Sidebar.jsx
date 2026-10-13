@@ -25,7 +25,13 @@ const ROLE_LABELS = { superadmin: 'Superadmin', admin: 'Admin', gestor: 'Gestor'
 // Captación, Productos, Contabilidad) son ahora una sola entrada en el
 // sidebar que navega al primer hijo; los hijos viven como tabs horizontales
 // dentro de la página (ver shared/lib/sections.js + SectionTabs.jsx).
-const NAV_SECTIONS = [
+//
+// Ninguna entrada puede llevar a «Página no encontrada» (#226). Diego, 10/10:
+// «Las entradas del menú que NO existen en ISEIE se marcan "Próximamente" (sin
+// enlace). Las que SÍ existen en algún CRM se hacen funcionar donde falten».
+// Lo vigila `__smoke__/menuSinRutasRotas.test.jsx`: cada `to` tiene su <Route> en
+// App.jsx, o lleva `comingSoon: true`.
+export const NAV_SECTIONS = [
   {
     label: 'Principal',
     items: [
@@ -83,9 +89,15 @@ const NAV_SECTIONS = [
       { to: '/secuencias-email', label: 'Email',     icon: Envelope, roles: ['admin', 'superadmin'], sectionPrefixes: ['/secuencias-email', '/email-templates'] },
       { to: '/forms',           label: 'Formularios', icon: Globe,  roles: ['admin', 'superadmin'], sectionPrefixes: ['/forms'] },
       { to: '/make-webhooks',   label: 'Make',      icon: PlugsConnected, roles: ['admin', 'superadmin'] },
+      // Llevaba a la pantalla de Make (una redirección): dos entradas para lo
+      // mismo. Desde el #226 es la de Webhooks, traída de MultiCRM.
       { to: '/webhooks',        label: 'Webhooks',  icon: PlugsConnected, roles: ['admin', 'superadmin'] },
       { to: '/captacion/whatsapp', label: 'Widget web', icon: WhatsappLogo, roles: ['admin', 'superadmin', 'soporte'] },
-      { to: '/campaigns',       label: 'Campañas',  icon: Megaphone, roles: ['admin', 'superadmin'], sectionPrefixes: ['/campaigns'] },
+      // Próximamente (#226): no hay pantalla en ISEIE. La de MultiCRM enseña
+      // datos INVENTADOS —sus llamadas a Meta y Google van con `USE_MOCKS =
+      // true`— y traer cifras falsas a un CRM con dinero real es peor que no
+      // tenerla. Vuelve cuando haya datos de verdad detrás.
+      { to: '/campaigns',       label: 'Campañas',  icon: Megaphone, roles: ['admin', 'superadmin'], comingSoon: true },
       { to: '/seo',             label: 'Tráfico orgánico', icon: MagnifyingGlass, roles: ['admin', 'superadmin'] },
     ],
   },
@@ -120,7 +132,10 @@ const NAV_SECTIONS = [
   {
     label: 'Finanzas',
     items: [
-      { to: '/ventas',                label: 'Dashboard',          icon: Calculator, roles: ['admin', 'superadmin'], statusTag: 'Pruebas' },
+      // El dashboard de finanzas, el mismo que MultiCRM abre en /finanzas. Llevaba
+      // a /ventas, igual que la entrada de debajo: dos entradas para una sola
+      // pantalla (#234). `end` para que no se encienda en /accounting/income.
+      { to: '/accounting',            label: 'Dashboard',          icon: Calculator, roles: ['admin', 'superadmin'], statusTag: 'Pruebas', end: true },
       { to: '/ventas',                label: 'Ventas',             icon: Receipt, statusTag: 'Pruebas' },
       { to: '/accounting/income',    label: 'Ingresos',           icon: Coins,      roles: ['admin', 'superadmin'], statusTag: 'Pruebas' },
       { to: '/revenue',              label: 'Conversiones',       icon: ChartLineUp, roles: ['admin', 'superadmin'], statusTag: 'Pruebas' },
@@ -141,7 +156,10 @@ const NAV_SECTIONS = [
       { to: '/informes',     label: 'Reportes',      icon: ChartLineUp, sectionPrefixes: ['/informes', '/activity'] },
       // Por que no compran (#170). Fuera de produccion hasta aprobarlo.
       ...(PROCESO_EN_PRUEBAS ? [{ to: '/informes/feedback', label: 'Feedback', icon: ChatCircleText, roles: ['admin', 'superadmin'] }] : []),
-      { to: '/chat-ia',     label: 'Chat IA',       icon: ChatCircleText, roles: ['admin', 'superadmin'] },
+      // Próximamente (#226): en MultiCRM la pantalla existe pero está aparcada
+      // —fuera de su menú hasta la fase 5— y depende de la API de Claude, cuya
+      // clave y cuyo módulo (`claude-chat`) ISEIE no tiene.
+      { to: '/chat-ia',     label: 'Chat IA',       icon: ChatCircleText, roles: ['admin', 'superadmin'], comingSoon: true },
     ],
   },
   {
@@ -250,25 +268,43 @@ function canSeeItem(item, role, soloColaboraciones, permisos) {
   return item.roles.some((r) => roles.includes(r));
 }
 
-function NavItem({ to, label, icon: Icon, end, comingSoon, statusTag, collapsed, onClick, sectionPrefixes }) {
+/**
+ * Una entrada del menú que todavía no lleva a ninguna parte (#226).
+ *
+ * Diego, 10/10: «Las entradas del menú que NO existen en ISEIE se marcan
+ * "Próximamente" (sin enlace)». Es un <div> y no un enlace: no navega, el
+ * tabulador no se para en ella y no hay forma de acabar en «Página no
+ * encontrada». La etiqueta dice siempre «Próximamente» —antes unas ponían
+ * «Próx.» y otras «Pruebas», y «Pruebas» es otra cosa: esa SÍ se abre—.
+ *
+ * El mismo aspecto que en MultiCRM: entrada atenuada y la etiqueta a la derecha.
+ */
+export function EntradaProximamente({ label, icon: Icon, collapsed = false }) {
+  return (
+    <div
+      aria-disabled="true"
+      data-proximamente=""
+      title={`${label} — Próximamente`}
+      className={cn(
+        'relative flex items-center rounded-md text-[13px] text-muted-foreground/45 cursor-not-allowed select-none',
+        collapsed ? 'justify-center h-10' : 'gap-3 px-3 py-1.5'
+      )}
+    >
+      {Icon && <Icon size={18} weight="regular" />}
+      {!collapsed && <span className="truncate">{label}</span>}
+      {!collapsed && (
+        <span className="ml-auto text-[9px] uppercase tracking-wider bg-muted/60 text-muted-foreground/70 px-1.5 py-0.5 rounded">
+          Próximamente
+        </span>
+      )}
+    </div>
+  );
+}
+
+// Exportada para la prueba del menú (#226): una entrada marcada no puede ser un enlace.
+export function NavItem({ to, label, icon: Icon, end, comingSoon, collapsed, onClick, sectionPrefixes }) {
   const location = useLocation();
-  if (comingSoon) {
-    const tag = statusTag || 'Próx.';
-    const title = statusTag ? `${label} — ${statusTag}` : `${label} — Próximamente`;
-    return (
-      <div
-        title={title}
-        className={cn(
-          'relative flex items-center rounded-md text-[13px] text-muted-foreground/45 cursor-not-allowed select-none',
-          collapsed ? 'justify-center h-10' : 'gap-3 px-3 py-1.5'
-        )}
-      >
-        <Icon size={18} weight="regular" />
-        {!collapsed && <span className="truncate">{label}</span>}
-        {!collapsed && <span className="ml-auto text-[9px] uppercase tracking-wider bg-muted/60 text-muted-foreground/70 px-1.5 py-0.5 rounded">{tag}</span>}
-      </div>
-    );
-  }
+  if (comingSoon) return <EntradaProximamente label={label} icon={Icon} collapsed={collapsed} />;
 
   // Para items con `sectionPrefixes`, NavLink no detecta como activo cuando
   // el usuario está en una ruta hermana (ej. /leads/pipeline cuando to=/leads).

@@ -30,7 +30,9 @@ export const SECTIONS = [
     roles: ['admin', 'superadmin'],
     tabs: [
       { to: '/forms',                label: 'Formularios',     icon: FileText },
-      { to: '/make-webhooks',        label: 'Make / Webhooks', icon: WebhooksLogo },
+      { to: '/make-webhooks',        label: 'Make',            icon: WebhooksLogo },
+      // Su propia pantalla desde el #226: antes /webhooks llevaba a la de Make.
+      { to: '/webhooks',             label: 'Webhooks',        icon: WebhooksLogo },
       { to: '/captacion/whatsapp',   label: 'Widget WhatsApp', icon: WebhooksLogo },
     ],
   },

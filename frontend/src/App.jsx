@@ -95,6 +95,11 @@ const EmailSequencesPage = lazy(() => import('./modules/email-sequences/pages/Em
 const EmailTemplatesPage = lazy(() => import('./modules/email-templates/pages/EmailTemplatesPage'));
 const MakeWebhooksPage = lazy(() => import('./modules/make-webhooks/pages/MakeWebhooksPage'));
 const MakeWebhookDetailPage = lazy(() => import('./modules/make-webhooks/pages/MakeWebhookDetailPage'));
+// Webhooks entrantes (Zapier, n8n, cualquier POST): traídos de MultiCRM (#226).
+// El servidor ya los tenía —`form_templates` con kind='webhook'—; faltaba la
+// pantalla, y la entrada del menú llevaba a la de Make.
+const WebhooksPage = lazy(() => import('./modules/webhooks/pages/WebhooksPage'));
+const WebhookDetailPage = lazy(() => import('./modules/webhooks/pages/WebhookDetailPage'));
 const WooCommercePage = lazy(() => import('./modules/woocommerce/pages/WooCommercePage'));
 const ColaDelDiaPage = lazy(() => import('./modules/proceso/pages/ColaDelDiaPage'));
 // El repaso de fin de mes: toda la base que no compro. No es la cola del dia.
@@ -128,7 +133,9 @@ const ROUTE_TITLES = {
   '/conexion/conectores':             'Conectores',
   '/matriculas/certificaciones':      'Certificaciones',
   '/forms':                           'Formularios',
-  '/make-webhooks':                   'Make / Webhooks',
+  '/make-webhooks':                   'Make',
+  '/webhooks':                        'Webhooks',
+  '/accounting':                      'Dashboard de finanzas',
   '/woocommerce':                     'WooCommerce',
   '/secuencias-email':                 'Secuencias de email',
   '/email-templates':                 'Plantillas de email',
@@ -268,11 +275,10 @@ function App() {
           <Route path="/mis-cursos" element={<MisCursosPage />} />
           <Route path="/make-webhooks" element={<MakeWebhooksPage />} />
           <Route path="/make-webhooks/:id" element={<MakeWebhookDetailPage />} />
-          {/* Alias: el sidebar y deep-links viejos apuntan a /webhooks pero en
-             ISEIE solo existe el módulo de Make-webhooks. Redirigimos para
-             evitar 404. */}
-          <Route path="/webhooks" element={<Navigate to="/make-webhooks" replace />} />
-          <Route path="/webhooks/:id" element={<Navigate to="/make-webhooks" replace />} />
+          {/* Antes /webhooks redirigía a Make: dos entradas del menú para la
+              misma pantalla. Ahora es la suya, como en MultiCRM (#226). */}
+          <Route path="/webhooks" element={<WebhooksPage />} />
+          <Route path="/webhooks/:id" element={<WebhookDetailPage />} />
           <Route path="/woocommerce" element={<WooCommercePage />} />
           <Route path="/secuencias-email" element={<EmailSequencesPage />} />
           <Route path="/email-templates" element={<EmailTemplatesPage />} />
@@ -303,15 +309,17 @@ function App() {
         {/* Las direcciones de antes, en ingles, siguen funcionando: si no,
             se rompen los favoritos del equipo y los enlaces ya enviados. */}
         <Route path="/settings" element={<Navigate to="/configuracion" replace />} />
-        <Route path="/reports/ia" element={<Navigate to="/informes/ia" replace />} />
+        {/* Cada redirección lleva a una pantalla que existe AQUÍ (#226). Se
+            copiaron de MultiCRM y cuatro llevaban a «Página no encontrada»:
+            /informes/ia, /mensajes, /chat-ia y /configuracion/plantillas-email
+            no existen en ISEIE. Las dos sin pantalla equivalente se quitan. */}
+        <Route path="/reports/ia" element={<Navigate to="/informes" replace />} />
         <Route path="/reports" element={<Navigate to="/informes" replace />} />
         <Route path="/sales" element={<Navigate to="/ventas" replace />} />
         <Route path="/profile" element={<Navigate to="/perfil" replace />} />
         <Route path="/preferences" element={<Navigate to="/preferencias" replace />} />
-        <Route path="/messages" element={<Navigate to="/mensajes" replace />} />
         <Route path="/email-sequences" element={<Navigate to="/secuencias-email" replace />} />
-        <Route path="/ai-chat" element={<Navigate to="/chat-ia" replace />} />
-        <Route path="/configuracion/email-templates" element={<Navigate to="/configuracion/plantillas-email" replace />} />
+        <Route path="/configuracion/email-templates" element={<Navigate to="/email-templates" replace />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>
