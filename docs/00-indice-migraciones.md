@@ -159,6 +159,7 @@ Fuente de verdad del esquema. Cada archivo en `backend/migrations/` es un SQL ej
 | 181 | 181_mcp_auditoria_visible_y_alertas.sql | MCP: actividad visible y alertas (#195) |
 | 182 | 182_mcp_interruptor.sql | Interruptor de emergencia del MCP (#196) |
 | 183 | 183_paso_hecho_a_mano.sql | Marcar un paso del proceso a mano: quién y cuándo (la 175 de MultiCRM, 09/10) |
+| 204 | 204_egresos_por_empresa.sql | Egresos por empresa (#227): `expenses.issuer_id` para los gastos de toda una empresa sin campus (la misma 204 de MultiCRM) |
 
 > **09/10/2026, comprobado contra el catálogo de producción:** aplicadas hasta la **183** (la 183, el
 > 09/10 con la checklist manual).
