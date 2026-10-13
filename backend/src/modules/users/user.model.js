@@ -1,5 +1,6 @@
 import { query, getClient } from '../../shared/config/db.js';
 import { limpiaRolesExtra } from '../../shared/utils/roles.js';
+import { existeTablaEmpresas, ponerEmpresas } from './user.empresas.js';
 
 // Esta lista es «quien puede llevar un prospecto», porque es para lo que la usa
 // casi todo el CRM: el filtro de Prospectos, asignar responsable, la exportacion
@@ -48,6 +49,13 @@ export async function findAll({ active, role, projectId, page, limit, incluirTod
   const countResult = await query(`SELECT COUNT(*) FROM users u ${where}`, params);
   const total = parseInt(countResult.rows[0].count);
 
+  // Las empresas enteras de cada admin (#220). Sin la migracion 203 vale null:
+  // la pantalla no enseña una casilla que no se puede guardar.
+  const empresasSql = (await existeTablaEmpresas())
+    ? `COALESCE((SELECT json_agg(ue.issuer_id ORDER BY ue.issuer_id)
+                   FROM user_empresas ue WHERE ue.user_id = u.id), '[]'::json)`
+    : 'NULL::json';
+
   const { rows } = await query(
     `SELECT u.id, u.nombre, u.email, u.role, u.roles_extra::text[] AS roles_extra, u.active, u.last_login_at, u.created_at, u.avatar_url, u.avatar_key,
             u.whatsapp_phone, u.whatsapp_display_name,
@@ -74,7 +82,8 @@ export async function findAll({ active, role, projectId, page, limit, incluirTod
                FROM user_projects up
                WHERE up.user_id = u.id AND up.active = true),
               '[]'::json
-            ) AS projects
+            ) AS projects,
+            ${empresasSql} AS empresa_ids
      FROM users u ${where}
      ORDER BY u.created_at DESC
      LIMIT $${paramIdx++} OFFSET $${paramIdx++}`,
@@ -145,7 +154,7 @@ export async function getUserProjects(userId) {
   return rows;
 }
 
-export async function create({ nombre, email, passwordHash, role, roles_extra: rolesExtra = [], projectIds, projects, setPasswordToken, setPasswordExpires }) {
+export async function create({ nombre, email, passwordHash, role, roles_extra: rolesExtra = [], projectIds, projects, empresaIds = [], porUserId = null, setPasswordToken, setPasswordExpires }) {
   const client = await getClient();
   try {
     await client.query('BEGIN');
@@ -170,6 +179,10 @@ export async function create({ nombre, email, passwordHash, role, roles_extra: r
       );
     }
 
+    // La empresa entera (#220), en la misma transacción: sus campus de hoy
+    // entran aquí, y si uno ya venía marcado arriba no se duplica.
+    if (empresaIds?.length) await ponerEmpresas(client, user.id, empresaIds, porUserId);
+
     await client.query('COMMIT');
     return user;
   } catch (err) {
@@ -182,7 +195,7 @@ export async function create({ nombre, email, passwordHash, role, roles_extra: r
 
 export async function update(id, { nombre, role, roles_extra: rolesExtra, projectIds, projects, avatar_url, avatar_key,
   whatsapp_phone, whatsapp_display_name,
-  factura_manager, editar_fechas_factura, gestor_colaboraciones }) {
+  factura_manager, editar_fechas_factura, gestor_colaboraciones, empresaIds, porUserId = null }) {
   const client = await getClient();
   try {
     await client.query('BEGIN');
@@ -235,6 +248,11 @@ export async function update(id, { nombre, role, roles_extra: rolesExtra, projec
         );
       }
     }
+
+    // Las empresas enteras (#220). DESPUÉS de los campus a propósito: si la
+    // lista de arriba desmarcó uno de una empresa que sigue entera, aquí vuelve,
+    // que es lo que dice la casilla. Quitar la empresa no quita sus campus.
+    if (empresaIds !== undefined) await ponerEmpresas(client, id, empresaIds, porUserId);
 
     await client.query('COMMIT');
 
