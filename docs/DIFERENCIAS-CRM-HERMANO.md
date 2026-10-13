@@ -113,6 +113,10 @@ endpoint de dashboard contable. En ISEIE se portó solo la parte de
 queda fuera de scope hasta que se necesite, ya que todas las tablas
 subyacentes existen.
 
+> **13/10 (#227):** ya no es una diferencia. MultiCRM tiene el mismo módulo
+> `expenses` (backend y frontend, ficheros idénticos) y los dos CRM sirven
+> `/api/expenses`, con `/api/accounting/expenses` como alias.
+
 ---
 
 ## 3. Migraciones consolidadas en 001 (sin archivo individual)

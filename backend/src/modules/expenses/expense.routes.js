@@ -7,18 +7,22 @@ const router = Router();
 
 router.use(verifyToken);
 
-// CRUD de egresos (admin y superadmin).
-// El gestor no opera sobre la contabilidad operativa.
-router.get('/', roleGuard('admin', 'superadmin'), ctrl.listExpenses);
+// Egresos: admin y superadmin. El gestor no opera sobre la contabilidad.
+// Lo que ve cada uno lo recorta el servicio por sus campus (#245).
+const soloAdmin = roleGuard('admin', 'superadmin');
+
+router.get('/', soloAdmin, ctrl.listExpenses);
+// Los totales del filtro entero (no de la página). Antes de '/:id'.
+router.get('/resumen', soloAdmin, ctrl.resumen);
 
 // Upload + download de comprobante (PDF/JPG/PNG/WEBP, máx 10MB).
-// Upload va ANTES de '/:id' para que no se interprete como un id.
-router.post('/upload-comprobante', roleGuard('admin', 'superadmin'), uploadDoc, ctrl.uploadComprobante);
-router.get('/comprobante/:key', roleGuard('admin', 'superadmin'), ctrl.downloadComprobante);
+// Van ANTES de '/:id' para que no se interpreten como un id.
+router.post('/upload-comprobante', soloAdmin, uploadDoc, ctrl.uploadComprobante);
+router.get('/comprobante/:key', soloAdmin, ctrl.downloadComprobante);
 
-router.get('/:id', roleGuard('admin', 'superadmin'), ctrl.getExpense);
-router.post('/', roleGuard('admin', 'superadmin'), ctrl.createExpense);
-router.patch('/:id', roleGuard('admin', 'superadmin'), ctrl.updateExpense);
-router.delete('/:id', roleGuard('admin', 'superadmin'), ctrl.deleteExpense);
+router.get('/:id', soloAdmin, ctrl.getExpense);
+router.post('/', soloAdmin, ctrl.createExpense);
+router.patch('/:id', soloAdmin, ctrl.updateExpense);
+router.delete('/:id', soloAdmin, ctrl.deleteExpense);
 
 export default router;
