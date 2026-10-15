@@ -182,6 +182,9 @@ export const NAV_SECTIONS = [
     items: [
       { to: '/conexion/mcp', label: 'MCP', icon: Robot, accesoMcp: true },
       { to: '/conexion/conectores', label: 'Conectores', icon: CloudArrowDown, roles: ['admin', 'superadmin'] },
+      // Diego, 15/10: «un apartado en Conexión para enviar esos datos ÚNICAMENTE
+      // CUANDO SE PONGA DATOS POR TRANSFERENCIA BANCARIA / DEPÓSITO BANCARIO».
+      { to: '/conexion/webhook-transferencias', label: 'Webhook de transferencias', icon: Bank, roles: ['admin', 'superadmin'] },
     ],
   },
   {
