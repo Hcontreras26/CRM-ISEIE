@@ -2,6 +2,7 @@
 // para facilitar su test unitario y aliviar el archivo principal.
 import type { Lead } from '@/shared/types';
 import type { ExportColumn } from '@/shared/lib/export';
+import { soloFecha, diasHasta } from '@/shared/lib/fechas';
 
 const AVATAR_COLORS: ReadonlyArray<string> = [
   'bg-rose-100 text-rose-700',
@@ -53,13 +54,12 @@ export function formatRelative(
   dateStr: string | null | undefined,
   { future = false }: { future?: boolean } = {},
 ): string | null {
-  if (!dateStr) return null;
-  const m = typeof dateStr === 'string' ? dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/) : null;
-  const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(dateStr);
-  if (Number.isNaN(d.getTime())) return null;
-  const now = new Date();
-  const diffMs = future ? d.getTime() - now.getTime() : now.getTime() - d.getTime();
-  const diffDays = Math.round(diffMs / 86400000);
+  // Por DÍAS enteros (15/10): con las horas redondeadas, un recordatorio de
+  // mañana salía «hoy» a partir del mediodía. Como MultiCRM (shared/lib/fechas).
+  const d = soloFecha(dateStr);
+  if (!d) return null;
+  const hasta = diasHasta(dateStr) ?? 0;
+  const diffDays = future ? hasta : -hasta;
   if (diffDays < 0) return future ? `hace ${-diffDays}d` : null;
   if (diffDays === 0) return 'hoy';
   if (diffDays === 1) return future ? 'mañana' : 'ayer';
@@ -116,7 +116,7 @@ export function exportLeadsCSV(leads: Lead[], filename: string): void {
       l.notas || '',
       l.created_at ? new Date(l.created_at).toLocaleDateString('es-ES') : '',
       l.last_interaction_at ? new Date(l.last_interaction_at).toLocaleDateString('es-ES') : '',
-      l.next_reminder_at ? new Date(l.next_reminder_at).toLocaleDateString('es-ES') : '',
+      l.next_reminder_at ? (soloFecha(l.next_reminder_at)?.toLocaleDateString('es-ES') ?? '') : '',
     ]),
   ];
   const csv = rows.map((r) => r.map((v: unknown) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
