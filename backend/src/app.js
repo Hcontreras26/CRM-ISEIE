@@ -40,6 +40,9 @@ import documentsModule from './modules/documents/index.js';
 import makeModule from './modules/make/index.js';
 import woocommerceModule from './modules/woocommerce/index.js';
 import connectorsModule from './modules/connectors/index.js';
+// Conexión → «Webhook de transferencias» (Diego, 15/10), como en MultiCRM. Migración 206.
+import webhooksSalientesModule from './modules/webhooks-salientes/index.js';
+import { startWebhooksSalientesScheduler } from './jobs/webhooksSalientesScheduler.js';
 import projectChannelsModule from './modules/project-channels/index.js';
 import installationModule from './modules/installation/index.js';
 import credentialsModule from './modules/credentials/index.js';
@@ -250,6 +253,8 @@ const MODULES = [
   makeModule,
   woocommerceModule,
   connectorsModule,
+  // Avisa a fuera de los cobros por transferencia o depósito bancario (Diego, 15/10).
+  webhooksSalientesModule,
   projectChannelsModule,
   installationModule,
   credentialsModule,
@@ -367,6 +372,12 @@ if (process.env.NODE_ENV !== 'test') {
       } catch (err) {
         logger.error({ err }, 'MCP: la vigilancia de alertas falló al arrancar');
       }
+    }
+    // Los reintentos del webhook de transferencias (se apaga con WEBHOOKS_SALIENTES_DISABLED=1).
+    try {
+      startWebhooksSalientesScheduler();
+    } catch (err) {
+      logger.error({ err }, 'Webhook de transferencias: los reintentos fallaron al arrancar');
     }
   });
 }

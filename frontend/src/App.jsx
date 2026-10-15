@@ -85,6 +85,8 @@ const CategoriesTreePage = lazy(() => import('./modules/product-categories/pages
 const MatriculasPage = lazy(() => import('./modules/matriculas/pages/MatriculasPage'));
 const McpPage = lazy(() => import('./modules/mcp/pages/McpPage'));
 const ConnectorsPage = lazy(() => import('./modules/connectors/pages/ConnectorsPage'));
+// Conexión → Webhook de transferencias (Diego, 15/10), como en MultiCRM.
+const WebhookTransferenciasPage = lazy(() => import('./modules/webhooks-salientes/pages/WebhookTransferenciasPage'));
 const AccountsPayablePage = lazy(() => import('./modules/accounts-payable/pages/AccountsPayablePage'));
 const PayrollPage = lazy(() => import('./modules/payroll/pages/PayrollPage'));
 const DocumentsPage = lazy(() => import('./modules/documents/pages/DocumentsPage'));
@@ -131,6 +133,7 @@ const ROUTE_TITLES = {
   '/matriculas':                      'Matrículas',
   '/conexion/mcp':                    'MCP',
   '/conexion/conectores':             'Conectores',
+  '/conexion/webhook-transferencias': 'Webhook de transferencias',
   '/matriculas/certificaciones':      'Certificaciones',
   '/forms':                           'Formularios',
   '/make-webhooks':                   'Make',
@@ -255,6 +258,8 @@ function App() {
           {/* Conexión → MCP y Conectores, como en MultiCRM. Quién puede usar el MCP lo decide el servidor. */}
           <Route path="/conexion/mcp" element={<McpPage />} />
           <Route path="/conexion/conectores" element={<ConnectorsPage />} />
+          {/* Conexión → Webhook de transferencias. Solo super admin y admin: lo corta el servidor. */}
+          <Route path="/conexion/webhook-transferencias" element={<WebhookTransferenciasPage />} />
           {/* Certifex vive dentro de Matrículas (Diego, 30/09). */}
           <Route path="/matriculas/certificaciones" element={<MatriculasPage />} />
           <Route path="/certifex/consultas" element={<Navigate to="/matriculas/certificaciones?vista=consultas" replace />} />
