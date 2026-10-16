@@ -147,6 +147,10 @@ export const NAV_SECTIONS = [
       { to: '/accounting/pendiente-facturar', label: 'Pendientes de facturar', icon: WarningCircle, roles: ['admin', 'superadmin'], statusTag: 'Pruebas' },
       { to: '/accounting/pagos-stripe', label: 'Pagos Stripe',    icon: PlugsConnected, roles: ['admin', 'superadmin'] },
       { to: '/accounting/facturas', label: 'Facturación', icon: FilePdf, roles: ['admin', 'superadmin', 'soporte', 'gestor'], permiso: 'factura_manager', sectionPrefixes: ['/accounting/facturas'] },
+      // Facturas de colaboradores (#202): en evaluación, solo en /staging y en local.
+      ...(SOLO_EN_PRUEBAS ? [{ to: '/accounting/facturas-colaboradores', label: 'Facturas de colaboradores', icon: Receipt, roles: ['admin', 'superadmin'] }] : []),
+      // «Mi factura» (#202): el colaborador con usuario sube aquí su factura del mes.
+      ...(SOLO_EN_PRUEBAS ? [{ to: '/mi-factura', label: 'Mi factura', icon: Receipt, roles: ['colaborador'] }] : []),
       { to: '/accounting/integrations', label: 'Integraciones',   icon: PlugsConnected, roles: ['admin', 'superadmin'], statusTag: 'Pruebas' },
     ],
   },

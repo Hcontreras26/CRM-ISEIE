@@ -37,6 +37,8 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<UserRole, PermissionMap> = {
     'projects.read': true, 'projects.update': true,
     'campaigns.read': true,
     'accounting.read': true, 'accounting.update': true,
+    // Facturas de colaboradores (#202): las de las empresas de sus campus. Espejo del backend.
+    'facturas_colaborador.ver_todas': true, 'facturas_colaborador.gestionar': true, 'facturas_colaborador.anular': true, 'facturas_colaborador.pagar': true,
   },
   gestor: {
     'leads.read': true,    'leads.create': true,    'leads.update': true,
@@ -59,6 +61,7 @@ export const PERMISSION_RESOURCES: ReadonlyArray<PermissionResource> = [
   { key: 'settings',    label: 'Configuración', actions: ['read', 'update'] },
   { key: 'campaigns',   label: 'Campañas',    actions: ['read'] },
   { key: 'accounting',  label: 'Contabilidad', actions: ['read', 'update'] },
+  { key: 'facturas_colaborador', label: 'Facturas de colaboradores', actions: ['ver_todas', 'gestionar', 'anular', 'pagar', 'subir'] },
 ];
 
 export const FIXED_ROLES: ReadonlyArray<FixedRole> = [
