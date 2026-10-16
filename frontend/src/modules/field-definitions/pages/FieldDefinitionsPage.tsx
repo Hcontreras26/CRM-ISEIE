@@ -29,10 +29,10 @@ const TABS: ReadonlyArray<TabDef> = [
 
 const TYPES: ReadonlyArray<{ v: FieldType; label: string }> = [
   { v: 'text',     label: 'Texto' },
-  { v: 'number',   label: 'Numero' },
+  { v: 'number',   label: 'Número' },
   { v: 'date',     label: 'Fecha' },
   { v: 'select',   label: 'Lista (opciones)' },
-  { v: 'boolean',  label: 'Si/No' },
+  { v: 'boolean',  label: 'Sí/No' },
   { v: 'textarea', label: 'Texto largo' },
 ];
 
@@ -85,11 +85,11 @@ export default function FieldDefinitionsPage() {
   async function save(): Promise<void> {
     if (!editing) return;
     if (!editing.label.trim()) {
-      toast({ title: 'Falta etiqueta', variant: 'destructive' }); return;
+      toast({ title: 'Falta la etiqueta', description: 'Escríbela en «Etiqueta visible»: es lo que se ve en el formulario.', variant: 'destructive' }); return;
     }
     const fieldKey = editing.field_key || toSnake(editing.label);
     if (!/^[a-z][a-z0-9_]*$/.test(fieldKey)) {
-      toast({ title: 'Clave invalida', description: 'Debe empezar con letra minuscula y solo a-z, 0-9, _.', variant: 'destructive' });
+      toast({ title: 'Clave no válida', description: 'En «Clave interna»: empieza por una letra minúscula y usa solo a-z, 0-9 y _.', variant: 'destructive' });
       return;
     }
     try {
@@ -195,7 +195,7 @@ export default function FieldDefinitionsPage() {
         <EmptyState
           icon={ListChecks}
           title={`Sin campos custom para ${tabMeta?.label.toLowerCase()}`}
-          description="Crea campos extra para capturar datos especificos del proyecto."
+          description="Crea campos extra para capturar datos específicos del proyecto."
           action={
             <button onClick={startCreate} className="flex items-center gap-1.5 h-9 px-4 rounded-xl bg-primary text-primary-foreground text-sm font-bold">
               <Plus size={14} weight="bold" /> Crear primer campo
@@ -263,7 +263,7 @@ export default function FieldDefinitionsPage() {
       {fields.length > 0 && (
         <section className="bg-card border border-border rounded-2xl p-4 space-y-3">
           <h3 className="text-sm font-bold uppercase text-muted-foreground">Preview</h3>
-          <p className="text-xs text-muted-foreground">Asi se veran al editar un {tabMeta?.label.toLowerCase().replace(/s$/, '') || 'registro'}.</p>
+          <p className="text-xs text-muted-foreground">Así se verán al editar un {tabMeta?.label.toLowerCase().replace(/s$/, '') || 'registro'}.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {fields.map((f) => (
               <CustomFieldRenderer key={f.id} field={f} value="" onChange={() => {}} />

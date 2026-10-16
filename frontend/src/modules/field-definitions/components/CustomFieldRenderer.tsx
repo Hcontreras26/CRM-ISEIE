@@ -1,7 +1,7 @@
 import type { FieldDefinition } from '../api/fields.api';
 import Select from '@/shared/components/ui/Select';
-
-const inputClass = 'w-full h-10 px-3 rounded-md border border-border bg-muted/30 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all';
+import Field from '@/shared/components/ui/Field';
+import { inputClass } from '@/shared/lib/ui';
 
 export type CustomFieldValue = string | number | boolean | null | undefined;
 
@@ -20,13 +20,14 @@ export default function CustomFieldRenderer({ field, value, onChange, disabled =
     onChange?.(field.field_key, next);
   }
 
+  // El Field común (#106): el obligatorio con su nombre para el lector de
+  // pantalla, y no un asterisco rojo suelto. El desplegable se nombra solo
+  // (`ariaLabel`); el resto, por la etiqueta.
   return (
-    <div>
-      <label htmlFor={id} className="text-xs font-medium text-muted-foreground mb-1 block">
-        {field.label}{field.required && <span className="text-red-500"> *</span>}
-      </label>
+    <Field label={field.label} required={field.required} disabled={disabled}
+      htmlFor={field.type === 'select' ? undefined : id}>
       {renderInput()}
-    </div>
+    </Field>
   );
 
   function renderInput() {
@@ -82,7 +83,7 @@ export default function CustomFieldRenderer({ field, value, onChange, disabled =
               onChange={(e) => set(e.target.checked)}
               className="rounded border-border"
             />
-            {v ? 'Si' : 'No'}
+            {v ? 'Sí' : 'No'}
           </label>
         );
       case 'textarea':
@@ -94,7 +95,7 @@ export default function CustomFieldRenderer({ field, value, onChange, disabled =
             value={stringValue}
             onChange={(e) => set(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2 rounded-md border border-border bg-muted/30 text-sm outline-none resize-y focus:border-primary focus:ring-2 focus:ring-primary/10 transition-all"
+            className={`${inputClass} h-auto py-2 resize-y`}
           />
         );
       case 'text':
