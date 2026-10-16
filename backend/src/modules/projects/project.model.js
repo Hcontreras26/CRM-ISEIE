@@ -1,22 +1,16 @@
 import { query } from '../../shared/config/db.js';
 import crypto from 'crypto';
 
-// TODO: las siguientes columnas estan en el CRM hermano pero AUN no existen
-// en 001_initial_schema.sql de CRM-ISEIE. Se anadiran en migraciones posteriores
-// (ver baseline §8). Hasta entonces se omiten de los SELECT y del UPDATE:
-//   - logo_url, logo_key                 (migracion logos por proyecto)
-//   - producto_label, producto_label_plural (etiquetas de productos)
-//   - shortcuts                          (atajos JSONB)
-//   - external_panels                    (paneles externos JSONB)
-//   - auto_email_documents               (envio automatico de docs)
-//   - lead_base_fields_config            (config de campos base de leads)
-//   - lead_columns                       (columnas visibles de leads)
+// Las columnas que el arranque de ISEIE dejó fuera «hasta que existieran» ya
+// existen (002, 009, 018, 038, 040, 043): el listado y la ficha las devuelven como en
+// MultiCRM (paridad, 15/10) y `update` las guarda. Sin ellas, por ejemplo, los atajos
+// guardados no volvían a la pantalla de Atajos ni los paneles externos al menú.
 
 export async function findAll({ active }) {
   const where = active === undefined ? '' : `WHERE p.active = ${active === 'true' || active === true}`;
   const { rows } = await query(
-    `SELECT p.id, p.nombre, p.slug, p.type, p.emoji,
-            p.modules, p.sidebar_labels, p.theme_color,
+    `SELECT p.id, p.nombre, p.slug, p.type, p.emoji, p.logo_key, p.producto_label, p.producto_label_plural,
+            p.modules, p.shortcuts, p.external_panels, p.sidebar_labels, p.theme_color, p.auto_email_documents,
             p.logo_url, p.color_cabecera, p.remitente_no_contestar,
             p.webhook_api_key, p.meta_account_id, p.google_account_id,
             p.gsc_property, p.dias_alerta_inactividad, p.active, p.created_at, p.updated_at,
@@ -31,8 +25,8 @@ export async function findAll({ active }) {
 
 export async function findById(id) {
   const { rows } = await query(
-    `SELECT id, nombre, slug, type, emoji,
-            modules, sidebar_labels, theme_color,
+    `SELECT id, nombre, slug, type, emoji, logo_key, producto_label, producto_label_plural,
+            modules, shortcuts, external_panels, sidebar_labels, theme_color, auto_email_documents,
             logo_url, color_cabecera, remitente_no_contestar,
             webhook_api_key, meta_account_id, google_account_id,
             gsc_property, dias_alerta_inactividad, active, created_at, updated_at
@@ -78,21 +72,22 @@ export async function create(data, db = { query }) {
 }
 
 export async function update(id, fields, db = { query }) {
-  // TODO: cuando se anadan las columnas pendientes (ver cabecera del archivo),
-  // re-incluirlas aqui: 'producto_label', 'producto_label_plural', 'logo_url',
-  // 'logo_key', 'lead_base_fields_config', 'lead_columns', 'external_panels',
-  // 'auto_email_documents'.
+  // Las columnas que el arranque de ISEIE dejó fuera «hasta crearlas» ya existen
+  // (009, 002, 018, 040 y 043): se guardan como en MultiCRM. Antes la validación
+  // las aceptaba y aquí se tiraban sin avisar. `client_columns` y `product_columns`
+  // no están en ISEIE (son la 140 y la 141 de MultiCRM).
   const allowed = ['nombre', 'type', 'emoji', 'meta_account_id', 'google_account_id',
                    'gsc_property', 'dias_alerta_inactividad', 'active',
-                   'modules', 'sidebar_labels', 'theme_color', 'sociedad_emisora_id',
+                   'producto_label', 'producto_label_plural', 'logo_url', 'logo_key', 'modules',
+                   'lead_base_fields_config', 'lead_columns', 'external_panels', 'sidebar_labels',
+                   'theme_color', 'auto_email_documents', 'sociedad_emisora_id',
                    // La marca en correos y formularios (migraciones 168 y 170).
-                   'logo_url', 'color_cabecera', 'remitente_no_contestar'];
+                   'color_cabecera', 'remitente_no_contestar'];
   const sets = [];
   const params = [];
   let idx = 1;
-  const jsonbFields = new Set(['modules', 'sidebar_labels']);
-  // TODO: anadir aqui los JSONB que faltan cuando se creen las columnas:
-  //   'lead_base_fields_config', 'lead_columns', 'external_panels'
+  const jsonbFields = new Set(['modules', 'lead_base_fields_config', 'lead_columns',
+    'external_panels', 'sidebar_labels']);
   for (const k of allowed) {
     if (fields[k] !== undefined) {
       sets.push(`${k} = $${idx++}`);

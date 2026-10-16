@@ -82,6 +82,10 @@ const NovedadesPage = lazy(() => import('./modules/novedades/pages/NovedadesPage
 const NotificacionesPage = lazy(() => import('./modules/notificaciones/pages/NotificacionesPage'));
 const ActivityPage = lazy(() => import('./shared/pages/ActivityPage'));
 const StatusPage = lazy(() => import('./shared/pages/StatusPage'));
+// Sistema → Registro (#111), traído de MultiCRM (paridad, 15/10).
+const RegistroPage = lazy(() => import('./modules/registro/pages/RegistroPage'));
+// Sistema → Mensajes: el chat interno del equipo, traído de MultiCRM (paridad, 15/10).
+const MessagesPage = lazy(() => import('./modules/messages/pages/MessagesPage'));
 
 // Módulos portados desde el hermano (paridad 2026-05-22).
 const RolesPage = lazy(() => import('./modules/permissions/pages/RolesPage'));
@@ -145,6 +149,7 @@ const ROUTE_TITLES = {
   '/conexion/conectores':             'Conectores',
   '/conexion/webhook-transferencias': 'Webhook de transferencias',
   '/matriculas/certificaciones':      'Certificaciones',
+  '/matriculas/diplomas':            'Diplomas',
   '/forms':                           'Formularios',
   '/make-webhooks':                   'Make',
   '/webhooks':                        'Webhooks',
@@ -160,6 +165,8 @@ const ROUTE_TITLES = {
   '/tareas/revisar':                  'Por revisar',
   '/tareas/configurar':               'Configurar tablero',
   '/status':                          'Status',
+  '/registro':                        'Registro',
+  '/mensajes':                        'Mensajes',
   '/informes':                         'Reportes',
   '/notificaciones':                  'Notificaciones',
   '/activity':                        'Actividad',
@@ -282,6 +289,8 @@ function App() {
           <Route path="/conexion/webhook-transferencias" element={<WebhookTransferenciasPage />} />
           {/* Certifex vive dentro de Matrículas (Diego, 30/09). */}
           <Route path="/matriculas/certificaciones" element={<MatriculasPage />} />
+          {/* Diplomas (#272): las solicitudes desde Moodle y los diplomas emitidos. */}
+          <Route path="/matriculas/diplomas" element={<MatriculasPage />} />
           <Route path="/certifex/consultas" element={<Navigate to="/matriculas/certificaciones?vista=consultas" replace />} />
           <Route path="/certifex/emisiones" element={<Navigate to="/matriculas/certificaciones" replace />} />
           <Route path="/forms" element={<FormsPage />} />
@@ -323,6 +332,9 @@ function App() {
           <Route path="/notifications" element={<Navigate to="/notificaciones" replace />} />
           <Route path="/activity" element={<ActivityPage />} />
           <Route path="/status" element={<StatusPage />} />
+          <Route path="/registro" element={<RegistroPage />} />
+          <Route path="/mensajes" element={<MessagesPage />} />
+          <Route path="/messages" element={<Navigate to="/mensajes" replace />} />
           <Route path="/solicitudes-cambio" element={<ChangeRequestsPage />} />
           <Route path="/solicitudes-cambio/:id" element={<ChangeRequestDetailPage />} />
           <Route path="/perfil" element={<ProfilePage />} />

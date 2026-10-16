@@ -46,6 +46,11 @@ const PAYMENT_METHODS = [
  */
 type Mode = 'existing' | 'new' | 'sin_gestora' | 'otra_gestora';
 
+/** Para comparar lo que se escribe con lo que hay: sin tildes y en minusculas (MultiCRM 22cf5ee5). */
+function sinTildes(s: string) {
+  return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
 export default function RegisterSaleDialog({ open, onClose, project, onSaved, modoInicial }: Props) {
   const today = new Date().toISOString().slice(0, 10);
   const { can } = usePermission();
@@ -172,6 +177,15 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
     }
   }, [metodo]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // SI LA BUSQUEDA DEJA UNA SOLA, SE ELIGE SOLA (como en MultiCRM, 22cf5ee5). Es lo
+  // que la gente espera al escribir el nombre entero: si solo casa con una, el
+  // desplegable no puede seguir en «— Selecciona —».
+  useEffect(() => {
+    if (!productSearch.trim()) return;
+    const hay = products.filter((p) => sinTildes(p.nombre).includes(sinTildes(productSearch)));
+    if (hay.length === 1 && productoId !== hay[0].id) setProductoId(hay[0].id);
+  }, [productSearch, products]);   // eslint-disable-line react-hooks/exhaustive-deps
+
   const installmentsSum = installments.reduce((acc, it) => acc + (parseFloat(it.importe_previsto) || 0), 0);
   const installmentsMismatch = metodo === 'fraccionado' && installments.length > 0
     && Math.abs(installmentsSum - parseFloat(importeTotal || '0')) > 0.01;
@@ -179,7 +193,8 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
   if (!open) return null;
 
   const productosFiltrados = productSearch.trim()
-    ? products.filter((p) => p.nombre.toLowerCase().includes(productSearch.toLowerCase()))
+    // Sin tildes y sin mayúsculas: «terapeutica» tiene que encontrar «Terapéutica».
+    ? products.filter((p) => sinTildes(p.nombre).includes(sinTildes(productSearch)))
     : products;
   const isRetroactiva = fecha < today;
 

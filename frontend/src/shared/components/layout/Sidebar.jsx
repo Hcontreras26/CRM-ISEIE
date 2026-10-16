@@ -9,7 +9,7 @@ import {
   ChatText,
   Receipt, Coins, Wrench, ShoppingBag, ChatCircleText, Wallet, Bank, Clock, GitMerge, CopySimple,
   UsersThree, CloudArrowDown,
-  GraduationCap, Warning, Kanban, CheckSquare, SlidersHorizontal } from '@phosphor-icons/react';
+  GraduationCap, Warning, Certificate, ClipboardText, ChatsCircle, Kanban, CheckSquare, SlidersHorizontal } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { rolesDe } from '@/shared/lib/roles';
 import usePermission from '@/shared/hooks/usePermission';
@@ -19,6 +19,7 @@ import client from '@/shared/api/client';
 import NotificationsBell from './NotificationsBell';
 import { isBetaAllowed, BETA_MODE } from '@/shared/config/betaConfig';
 import { PROCESO_EN_PRUEBAS, SOLO_EN_PRUEBAS } from '@/shared/lib/enPruebas';
+import { CERTIFEX_PANEL } from '@/shared/lib/certifexPanel';
 
 const ROLE_LABELS = { superadmin: 'Superadmin', admin: 'Admin', gestor: 'Gestor', soporte: 'Soporte', tutor: 'Tutor', colaborador: 'Colaborador' };
 
@@ -191,6 +192,10 @@ export const NAV_SECTIONS = [
       { to: '/leads/revision-duplicados', label: 'Revisión duplicados', icon: GitMerge, roles: ['admin', 'superadmin'] },
       { to: '/leads/duplicados', label: 'Buscar duplicados', icon: CopySimple, roles: ['admin', 'superadmin'] },
       { to: '/matriculas', label: 'Matrículas', icon: UserCheck },
+      // Diplomas de Certifex (#272): lo que piden los alumnos desde Moodle, aprobarlo,
+      // enviarlo y revocarlo. Solo administración, como en MultiCRM. Se enciende por
+      // configuración, como Certificaciones (VITE_CERTIFEX_PANEL).
+      ...(CERTIFEX_PANEL ? [{ to: '/matriculas/diplomas', label: 'Diplomas', icon: Certificate, roles: ['superadmin', 'admin'] }] : []),
     ],
   },
   {
@@ -214,6 +219,8 @@ export const NAV_SECTIONS = [
       // Lo que trae cada versión (Diego, 28/09). La 2.0.0 cuenta lo que aún está
       // en pruebas: sale con ello.
       ...(PROCESO_EN_PRUEBAS ? [{ to: '/novedades', label: 'Novedades', icon: Sparkle, roles: ['superadmin', 'admin', 'gestor', 'soporte'] }] : []),
+      // El chat interno del equipo, como en MultiCRM.
+      { to: '/mensajes', label: 'Mensajes', icon: ChatsCircle },
       { to: '/solicitudes-cambio', label: 'Solicitudes de cambio', icon: GitMerge },
       { to: '/notificaciones', label: 'Notificaciones',   icon: Bell },
       // El tutor entra aqui: es donde cambia su contraseña.
@@ -221,6 +228,9 @@ export const NAV_SECTIONS = [
       { to: '/soporte',        label: 'Soporte',          icon: Headset },
       { to: '/manual',         label: 'Manual del CRM',   icon: BookOpen },
       { to: '/status',         label: 'Status',           icon: Pulse },
+      // El registro (#111), como en MultiCRM: quién hizo qué y, en «todos», los sucesos
+      // del sistema. Los mismos roles que exige el servidor.
+      { to: '/registro',       label: 'Registro',         icon: ClipboardText, roles: ['superadmin', 'admin'] },
     ],
   },
 ];

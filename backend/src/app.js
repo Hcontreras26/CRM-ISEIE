@@ -60,6 +60,10 @@ import procesoModule from './modules/proceso/index.js';
 import feedbackModule from './modules/feedback/index.js';
 import novedadesModule from './modules/novedades/index.js';
 import certifexModule from './modules/certifex/index.js';
+// Sistema → Registro (#111), como en MultiCRM: quién hizo qué y los sucesos del sistema.
+import registroModule from './modules/registro/index.js';
+// Sistema → Mensajes: el chat interno del equipo, como en MultiCRM. Migración 232.
+import messagesModule from './modules/messages/index.js';
 import mcpModule from './modules/mcp/index.js';
 import { startFeedbackDia7Scheduler } from './jobs/feedbackDia7Scheduler.js';
 import { startNovedadesScheduler } from './jobs/novedadesScheduler.js';
@@ -281,6 +285,10 @@ const MODULES = [
   convocatoriasModule,
   // Certifex: el CRM aprueba y Certifex emite (Matrículas → Certificaciones).
   certifexModule,
+  // Sistema → Registro (#111): solo lectura sobre lo que ya se apunta. Admin y superadmin.
+  registroModule,
+  // Mensajes del equipo (/api/mensajes, con /api/messages de alias).
+  messagesModule,
   // Conexion de Claude por MCP: solo consulta, con token personal (como MultiCRM).
   mcpModule,
   // El tablero aún no está aprobado para producción: solo en local y /staging.
@@ -307,6 +315,73 @@ for (const mod of MODULES) {
 
 // Error handler (debe ir ultimo)
 app.use(errorHandler);
+
+// Traído de MultiCRM (a5087a0e, paridad 15/10).
+/**
+ * Vuelve a encolar los adjuntos que se quedaron a medias.
+ *
+ * La cola de descarga vive en memoria, asi que un reinicio la vacia. Habia un
+ * boton para recuperarla, pero esperar a que una gestora lo pulse es esperar
+ * sentado: lo que ve es que las fotos no llegan, no que hay una cola muerta.
+ *
+ * Se hace por sesion, porque para descifrar un adjunto hace falta el socket de
+ * la sesion que lo recibio. Y con un retraso: al arrancar, Evolution todavia
+ * esta levantando las suyas, y pedirle archivos antes de tiempo es tirar
+ * peticiones que van a fallar.
+ */
+async function recuperarAdjuntosDeWhatsapp() {
+  setTimeout(async () => {
+    try {
+      const { query } = await import('./shared/config/db.js');
+      const media = await import('./modules/whatsapp/media.service.js');
+      const { rows } = await query(
+        `SELECT DISTINCT c.instancia
+           FROM wa_mensajes m
+           JOIN wa_conversaciones c ON c.id = m.conversacion_id
+          WHERE m.media_url IS NULL
+            AND m.tipo NOT IN ('texto', 'otro')
+            AND m.wa_id IS NOT NULL`
+      );
+      let total = 0;
+      for (const { instancia } of rows) total += await media.reencolarPendientes(instancia);
+      if (total) logger.info({ sesiones: rows.length, archivos: total }, 'WhatsApp: adjuntos pendientes recuperados tras el arranque');
+    } catch (err) {
+      // Que no se pueda recuperar no puede impedir arrancar: el boton de
+      // reintentar sigue estando para hacerlo a mano.
+      logger.warn({ err: err.message }, 'WhatsApp: no se pudieron recuperar los adjuntos pendientes');
+    }
+  }, 45_000).unref();
+}
+
+// ── La red de seguridad del proceso ──────────────────────────────────────────
+//
+// No habia ninguna, y eso significa que UN fallo asincrono sin capturar en
+// cualquier rincon tumba la API entera. Paso el 21/08/2026: un parpadeo de
+// Postgres, el cron de Stripe lanzo dentro de su `setTimeout` —tenia
+// `try/finally` pero no `catch`— y se llevo por delante el CRM completo.
+//
+// Y en WhatsApp eso duele el doble, porque la cola de descarga de adjuntos vive
+// en memoria: al reiniciar, los archivos del historial que estaban en cola se
+// quedan sin bajar y la gestora ve «⬇ Descargar» para siempre. Eso es lo que se
+// veia como «la sincronizacion va fatal».
+//
+// Una promesa rota no puede tirar el servidor: se apunta y se sigue sirviendo.
+// Una excepcion sincrona sin capturar SI se sale, porque ahi el proceso puede
+// haber quedado a medias — pero por la puerta, dando tiempo a cerrar, y PM2 lo
+// levanta. Al arrancar se recupera la cola, asi que reiniciar ya no pierde nada.
+process.on('unhandledRejection', (motivo) => {
+  logger.error(
+    { err: motivo instanceof Error ? motivo.message : String(motivo),
+      stack: motivo instanceof Error ? motivo.stack : undefined },
+    'Promesa rechazada sin capturar — se sigue sirviendo'
+  );
+});
+
+process.on('uncaughtException', (err) => {
+  logger.fatal({ err: err.message, stack: err.stack }, 'Excepcion sin capturar — se cierra');
+  // Un margen para que el registro salga antes de irse.
+  setTimeout(() => process.exit(1), 500).unref();
+});
 
 if (process.env.NODE_ENV !== 'test') {
   app.listen(PORT, () => {
@@ -404,6 +479,8 @@ if (process.env.NODE_ENV !== 'test') {
     } catch (err) {
       logger.error({ err }, 'Webhook de transferencias: los reintentos fallaron al arrancar');
     }
+    // Los adjuntos de WhatsApp que se quedaron a medias con el reinicio (como en MultiCRM).
+    recuperarAdjuntosDeWhatsapp();
     // El correo de cada mañana del tablero (se apaga con TAREAS_DIARIO_DISABLED=1).
     if (tareasActivas()) {
       try {

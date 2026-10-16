@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+// La descripción viene de la web del curso: se limpia antes de pintarla (XSS), como en MultiCRM.
+import DOMPurify from 'dompurify';
 import { useParams, Link } from 'react-router-dom';
 import { useProjectContext as useProject } from '@/contexts/ProjectContext';
 import { getProduct } from '../api/products.api';
@@ -208,7 +210,7 @@ export default function ProductDetailPage() {
           {product.descripcion && (
             <p
               className="text-muted-foreground text-sm mt-2 whitespace-pre-wrap leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: product.descripcion }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.descripcion) }}
             />
           )}
         </div>

@@ -37,6 +37,23 @@ function urlWebhook(projectId: number | null | undefined): string {
   return `${raiz}/stripe-webhook/${projectId ?? ''}`;
 }
 
+/**
+ * Los eventos que el CRM ATIENDE, sacados de `handleWebhookEvent`.
+ *
+ * La pantalla pedia marcar `checkout.session.completed`, `invoice.paid` y
+ * `payout.paid`, y de esos tres no se procesa NINGUNO: caen en el `default` y
+ * se descartan. Quien siguiera el tutorial marcaba tres casillas inutiles y se
+ * dejaba sin marcar los `charge.*`, que son los que traen el dinero.
+ *
+ * Si se anade un `case` alli, hay que anadirlo aqui. No hay forma de compartir
+ * la lista —una vive en el servidor y esta en el navegador— asi que queda dicho.
+ */
+const EVENTOS_DEL_WEBHOOK = [
+  'charge.succeeded', 'charge.updated', 'charge.refunded', 'charge.failed',
+  'charge.dispute.created', 'charge.dispute.updated', 'charge.dispute.closed',
+  'payment_intent.succeeded', 'payment_intent.payment_failed',
+] as const;
+
 const EMPTY = (provider: Provider): Integration => ({
   provider, active: true, has_secret: false, secret_preview: null,
   config_public: {}, last_test_status: null, last_test_message: null, last_test_at: null,
@@ -224,14 +241,23 @@ function StripeCard({ projectId }: { projectId: number }) {
             </div>
 
             <div>
-              <p className="font-semibold mb-1">🔔 Paso 2 — Webhook (cuando esté listo el handler)</p>
+              <p className="font-semibold mb-1">🔔 Paso 2 — Webhook</p>
               <ol className="list-decimal list-inside space-y-1 pl-1 text-muted-foreground">
                 <li>En Stripe → <strong>Developers</strong> → <strong>Webhooks</strong> → <strong>"Add endpoint"</strong>.</li>
-                <li>URL del endpoint:<br/><code className="px-1 rounded bg-card text-[10px] break-all">{window.location.origin}/api/integrations/stripe/webhook</code></li>
-                <li>Eventos a escuchar: <code className="px-1 rounded bg-card">checkout.session.completed</code>, <code className="px-1 rounded bg-card">invoice.paid</code>, <code className="px-1 rounded bg-card">payment_intent.succeeded</code>, <code className="px-1 rounded bg-card">payout.paid</code>.</li>
+                <li>URL del endpoint:<br/><code className="px-1 rounded bg-card text-[10px] break-all">{urlWebhook(projectId)}</code>
+                  {!projectId && <span className="text-amber-700 dark:text-amber-400"> — elige antes un proyecto: la dirección lleva su número.</span>}</li>
+                <li>Eventos a escuchar:{' '}
+                  {EVENTOS_DEL_WEBHOOK.map((e, i) => (
+                    <span key={e}>{i > 0 && ', '}<code className="px-1 rounded bg-card">{e}</code></span>
+                  ))}.</li>
                 <li>Copia el <strong>"Signing secret"</strong> (<code className="px-1 rounded bg-card">whsec_…</code>) y pégalo abajo en <em>Webhook Signing Secret</em>.</li>
-                <li>Verifica con Stripe CLI antes de poner live: <code className="px-1 rounded bg-card">stripe listen --forward-to {window.location.origin}/api/integrations/stripe/webhook</code></li>
+                <li>Verifica con Stripe CLI antes de poner live: <code className="px-1 rounded bg-card">stripe listen --forward-to {urlWebhook(projectId)}</code></li>
               </ol>
+              <p className="mt-1.5 text-[11px]">
+                <strong>Sin el secreto configurado el CRM rechaza el webhook</strong>, a propósito: sin
+                firma, esa dirección sería un formulario público para inventar cobros. Mientras tanto los
+                cobros entran igual por el sondeo, cada 5 minutos.
+              </p>
             </div>
 
             <div>
