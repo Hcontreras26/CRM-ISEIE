@@ -49,6 +49,11 @@ const InvoicesPage = lazy(() => import('./modules/invoices/pages/InvoicesPage'))
 const InvoicingConfigPage = lazy(() => import('./modules/invoices/pages/InvoicingConfigPage'));
 const InvoiceTemplateEditorPage = lazy(() => import('./modules/invoices/pages/InvoiceTemplateEditorPage'));
 const InvoiceCreatePage = lazy(() => import('./modules/invoices/pages/InvoiceCreatePage'));
+// Facturas de colaboradores (#202, como en MultiCRM): la lista de administración,
+// «Mi factura» del colaborador con usuario y la página pública del enlace.
+const FacturasColaboradoresPage = lazy(() => import('./modules/facturas-colaborador/pages/FacturasColaboradoresPage'));
+const MiFacturaPage = lazy(() => import('./modules/facturas-colaborador/pages/MiFacturaPage'));
+const FacturaEnlacePage = lazy(() => import('./modules/facturas-colaborador/pages/FacturaEnlacePage'));
 const RevenuePage = lazy(() => import('./modules/revenue/pages/RevenuePage'));
 const ChannelsConfigPage = lazy(() => import('./modules/settings/pages/ChannelsConfigPage'));
 const ShortcutsConfigPage = lazy(() => import('./modules/settings/pages/ShortcutsConfigPage'));
@@ -132,6 +137,8 @@ const ROUTE_TITLES = {
   '/accounting/pagos-stripe':         'Pagos Stripe',
   '/accounting/facturas':             'Facturas',
   '/accounting/facturas/configuracion':'Configuración de facturación',
+  '/accounting/facturas-colaboradores': 'Facturas de colaboradores',
+  '/mi-factura':                      'Mi factura',
   '/payroll':                         'Nóminas',
   '/matriculas':                      'Matrículas',
   '/conexion/mcp':                    'MCP',
@@ -209,6 +216,9 @@ function App() {
         <Route path="/embed/form/:embedId" element={<EmbedFormPage />} />
         {/* Sin sesion: la abre desde el correo quien no compro. */}
         <Route path="/feedback/:token" element={<FeedbackEncuestaPage />} />
+        {/* El enlace personal del colaborador (#202): sin usuario, el enlace es la llave.
+            Si la API no está montada (producción sin aprobar), dice que el enlace no vale. */}
+        <Route path="/factura-colaborador/:token" element={<FacturaEnlacePage />} />
 
         {/* Privadas (con layout) */}
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
@@ -249,6 +259,10 @@ function App() {
           <Route path="/accounting/facturas/nueva" element={<InvoiceCreatePage />} />
           <Route path="/accounting/facturas/configuracion" element={<InvoicingConfigPage />} />
           <Route path="/accounting/facturas/plantillas" element={<InvoiceTemplateEditorPage />} />
+          {/* Facturas de colaboradores (#202): en evaluación, solo en /staging y en local, como en MultiCRM. */}
+          <Route path="/accounting/facturas-colaboradores"
+            element={SOLO_EN_PRUEBAS ? <FacturasColaboradoresPage /> : <Navigate to="/accounting" replace />} />
+          <Route path="/mi-factura" element={SOLO_EN_PRUEBAS ? <MiFacturaPage /> : <Navigate to="/" replace />} />
           <Route path="/revenue" element={<RevenuePage />} />
           <Route path="/clients" element={<ClientsPage />} />
           <Route path="/clients/:id" element={<ClientDetailPage />} />

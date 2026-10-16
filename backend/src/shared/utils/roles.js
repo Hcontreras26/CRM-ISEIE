@@ -64,6 +64,9 @@ export function soloEsColaborador(user) {
 export const RUTAS_DEL_COLABORADOR = [
   /^\/api\/auth(?:\/|$)/,
   /^\/api\/tasks(?:\/|$)/,
+  // «Mi factura» (#202): solo lo suyo. Lo de administración, nunca. (El enlace
+  // público y las descargas firmadas no pasan por `verifyToken`: no llegan aquí.)
+  /^\/api\/facturas-colaborador\/mias(?:\/|$)/,
   /^\/api\/notifications(?:\/|$)/,
   /^\/api\/users\/mis-avisos\/?$/,
   /^\/api\/users\/\d+\/(?:avatar|views)\/?$/,

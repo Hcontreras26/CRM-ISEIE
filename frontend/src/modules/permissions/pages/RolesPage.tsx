@@ -39,6 +39,8 @@ const editaTareas = (key: string) => key === 'admin' || key === 'colaborador' ||
 const ACCION_ES: Record<string, string> = {
   view_all: 'Ver todo', view_own: 'Ver lo suyo', assign: 'Asignar', edit: 'Editar',
   create: 'Crear', delete: 'Eliminar', close: 'Aprobar y cerrar', manage: 'Configurar',
+  // Facturas de colaboradores (#202), como en MultiCRM.
+  ver_todas: 'Ver todas', gestionar: 'Gestionar', anular: 'Anular', pagar: 'Marcar pagada', subir: 'Subir la suya',
 };
 const AYUDA: Record<string, string> = {
   'tasks.view_all': 'Ver el tablero de cualquier persona, «Todo el equipo» y sus métricas',
@@ -50,7 +52,7 @@ const AYUDA: Record<string, string> = {
   'tasks.close': 'Aprobar o devolver desde «Por revisar», y cerrar o reabrir una tarea («Hecha»)',
   'tasks.manage': 'Configurar el tablero: columnas, áreas y proyectos propios',
 };
-const etiquetaAccion = (res: string, a: string) => (res === 'tasks' ? ACCION_ES[a] || a : a);
+const etiquetaAccion = (res: string, a: string) => (res === 'tasks' || res === 'facturas_colaborador' ? ACCION_ES[a] || a : a);
 
 interface RoleEntry {
   key: string;

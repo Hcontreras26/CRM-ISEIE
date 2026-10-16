@@ -165,6 +165,9 @@ Fuente de verdad del esquema. Cada archivo en `backend/migrations/` es un SQL ej
 | 209 | 209_tasks_enlaces.sql | Enlaces de la tarjeta (`task_links`) (la 195 de MultiCRM) |
 | 210 | 210_tasks_areas_columns_external.sql | Columnas propias, áreas y proyectos propios del tablero (la 196 de MultiCRM) |
 | 211 | 211_permisos_por_rol.sql | Permisos de Tareas por rol desde Configuración › Roles (`role_permission_overrides`) (la 197 de MultiCRM) |
+| 220 | 220_facturas_colaborador.sql | Facturas de colaboradores (#202): `colaboradores`, `colaborador_empresas`, `facturas_colaborador` y su registro (la 198 de MultiCRM) |
+| 221 | 221_facturas_colaborador_desglose_y_pago.sql | Cómo cobra cada colaborador (fijo, por hora, por proyecto, IVA e IRPF), el desglose en líneas y el pago (la 201 de MultiCRM) |
+| 222 | 222_facturas_colaborador_importe_pdf.sql | El total que pone el PDF (`importe_pdf`): cuadra si es el importe escrito (la 202 de MultiCRM) |
 
 > **09/10/2026, comprobado contra el catálogo de producción:** aplicadas hasta la **183** (la 183, el
 > 09/10 con la checklist manual).
