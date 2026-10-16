@@ -134,7 +134,8 @@ export async function changePassword(req, res, next) {
 
     const { rows } = await query('SELECT password_hash FROM users WHERE id = $1', [userId]);
     if (!rows[0]) throw new AppError('Usuario no encontrado', 404, 'USER_NOT_FOUND');
-    const ok = await bcrypt.compare(currentPassword, rows[0].password_hash);
+    // Sin contraseña puesta (alta sin clave), bcrypt reventaba con un 500 (MultiCRM 86c5be82).
+    const ok = rows[0].password_hash ? await bcrypt.compare(currentPassword, rows[0].password_hash) : false;
     // 400 y no 401: un 401 hace que la pantalla intente renovar la sesion,
     // cuando lo unico que ha pasado es que la contraseña actual no es esa.
     if (!ok) throw new AppError('La contraseña actual no es correcta', 400, 'INVALID_CURRENT_PASSWORD');

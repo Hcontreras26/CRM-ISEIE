@@ -1164,8 +1164,10 @@ export async function reassignPendingRoundRobin(projectId) {
     const gestorIds = gestores.map((g) => g.user_id);
 
     const { rows: pending } = await client.query(
+      // `deleted_at IS NULL` faltaba: sin el, esto repartia tambien las fichas
+      // borradas y las marcadas como spam (arreglo de MultiCRM 93bdf4a7).
       `SELECT id FROM leads
-       WHERE project_id = $1 AND responsable_id IS NULL
+       WHERE project_id = $1 AND responsable_id IS NULL AND deleted_at IS NULL
        ORDER BY created_at ASC`,
       [projectId]
     );

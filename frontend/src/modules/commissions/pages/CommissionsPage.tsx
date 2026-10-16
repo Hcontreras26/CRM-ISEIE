@@ -22,7 +22,11 @@ interface CommissionRow {
   conv_total: string | number;
   conv_pagado: string | number;
   importe_comision: string | number;
-  porcentaje: string | number;
+  // La API devuelve las columnas de `commissions` (migración 003): `pct` e
+  // `importe_base`. Se leían `porcentaje` y `conv_total`: el % salía a 0 y la base
+  // enseñaba el total de la venta (en MultiCRM ya se leían bien).
+  pct: string | number;
+  importe_base: string | number;
   estado: Estado;
   fecha_pago: string | null;
   fecha_compra: string;
@@ -251,8 +255,8 @@ export default function CommissionsPage() {
                       <div className="text-[11px] text-muted-foreground truncate">{r.lead_nombre}</div>
                     </div>
                     <div className="text-xs text-muted-foreground truncate mt-1 md:mt-0">{r.product_nombre || r.producto_contratado}</div>
-                    <div className="text-xs text-muted-foreground tabular-nums">{fmt(r.conv_total)}</div>
-                    <div className="text-xs tabular-nums">{pctFmt(r.porcentaje)}</div>
+                    <div className="text-xs text-muted-foreground tabular-nums">{fmt(r.importe_base)}</div>
+                    <div className="text-xs tabular-nums">{pctFmt(r.pct)}</div>
                     <div className="text-right font-semibold tabular-nums">{fmt(r.importe_comision)}</div>
                     <div className="text-right">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider ${ESTADO_BADGE[r.estado]}`}>

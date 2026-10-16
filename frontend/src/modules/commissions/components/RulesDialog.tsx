@@ -67,7 +67,8 @@ export default function RulesDialog({ onClose, onSaved }: Props) {
     if (!newRule.project_id) { setProducts([]); return; }
     (async () => {
       try {
-        const r = await client.get(`/products/${newRule.project_id}`);
+        // La lista de un proyecto es /products?projectId=… (como en MultiCRM, 116757f4).
+        const r = await client.get('/products', { params: { projectId: newRule.project_id } });
         if (r.success) setProducts((r.data as ProductOption[]) || []);
       } catch {}
     })();
