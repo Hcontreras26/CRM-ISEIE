@@ -78,6 +78,19 @@ export default {
         // 28px · las cifras que se miran de lejos. Siempre con tabular-nums.
         cifra: ['1.75rem', { lineHeight: '2.25rem', fontWeight: '600' }],
       },
+      // El ritmo de la pantalla (#32), igual que en MultiCRM. Faltaba aquí y el
+      // código ya lo usaba (p-tarjeta, space-y-bloque, gap-tarjeta en
+      // `FilaCampos`…): sin esto esas clases no hacían nada y los campos de una
+      // fila salían pegados (revisado el 16/10, #106).
+      //
+      //   space-y-bloque   entre los bloques de una pantalla
+      //   p-tarjeta        relleno de una tarjeta      (lo pone <Card>)
+      //   gap-fila         entre controles de una fila
+      spacing: {
+        bloque: '1.5rem',   // 24px
+        tarjeta: '1rem',    // 16px
+        fila: '0.5rem',     // 8px
+      },
       borderRadius: {
         '2xl': 'calc(var(--radius) + 4px)',
         xl: 'calc(var(--radius) + 2px)',

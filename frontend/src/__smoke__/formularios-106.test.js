@@ -196,3 +196,21 @@ describe('formato de los formularios (#106)', () => {
     expect(total).toBeGreaterThanOrEqual(0);
   });
 });
+
+// Los espacios con nombre de la #32 (16/10). El código de ISEIE ya usaba
+// p-tarjeta, space-y-bloque y gap-tarjeta (el de `FilaCampos`), pero el
+// tailwind.config.js no los definía: Tailwind no generaba esas clases y los
+// campos de cada fila salían pegados, sin ningún aviso.
+describe('los espacios con nombre de la #32', () => {
+  it('cada espacio con nombre que usa el código está definido en tailwind.config.js', () => {
+    const config = readFileSync(resolve(SRC, '..', 'tailwind.config.js'), 'utf8');
+    const usados = new Set();
+    for (const { texto } of TODOS) {
+      for (const m of texto.matchAll(/\b(?:p|px|py|pt|pb|m|mt|mb|gap|gap-x|gap-y|space-y|space-x)-(bloque|tarjeta|fila)\b/g)) usados.add(m[1]);
+    }
+    expect(usados.size).toBeGreaterThan(0);
+    for (const nombre of usados) {
+      expect(config, `falta «${nombre}» en theme.extend.spacing`).toMatch(new RegExp(`\\b${nombre}:\\s*'[\\d.]+rem'`));
+    }
+  });
+});
