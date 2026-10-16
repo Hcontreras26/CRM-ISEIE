@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useProjectContext } from '@/contexts/ProjectContext';
 import PageHeader from '@/shared/components/ui/PageHeader';
-import { ShieldCheck, Plus, Lock, Warning, CheckCircle, Circle } from '@phosphor-icons/react';
-import {
+import { ShieldCheck, Plus, Lock, Warning, CheckCircle, Circle, PencilSimple } from '@phosphor-icons/react';
+import usePermission, {
   FIXED_ROLES,
   PERMISSION_RESOURCES,
   ROLE_DEFAULT_PERMISSIONS,
 } from '@/shared/hooks/usePermission';
+import PermisosTareas from '../components/PermisosTareas';
 import type { UserRole } from '@/shared/types';
 import * as api from '../api/permissions.api';
 import type { CustomRole } from '../api/permissions.api';
@@ -22,6 +23,35 @@ const COLOR_BG: Record<RoleColor, string> = {
   amber:   'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
 };
 
+// Los roles con tablero que no salen en FIXED_ROLES (que se usa en más sitios
+// y no se toca): también se les pueden cambiar los permisos de Tareas (#210).
+const ROLES_CON_TABLERO: ReadonlyArray<{ key: string; label: string; desc: string; color: RoleColor }> = [
+  { key: 'colaborador', label: 'Colaborador', desc: 'Del grupo, sin campus. Solo el tablero de tareas.', color: 'sky' },
+];
+
+// A quién se le pueden cambiar los permisos de Tareas: a los roles con tablero
+// menos el superadmin (lo puede todo), y a los roles a medida. Gestora, soporte,
+// project manager y tutor no tienen tablero (Diego, 09/10). Igual que el servidor.
+const editaTareas = (key: string) => key === 'admin' || key === 'colaborador' || key.startsWith('custom:');
+
+// Las acciones de Tareas en castellano, en la columna «Otros», y lo que permite
+// cada una al pasar el ratón.
+const ACCION_ES: Record<string, string> = {
+  view_all: 'Ver todo', view_own: 'Ver lo suyo', assign: 'Asignar', edit: 'Editar',
+  create: 'Crear', delete: 'Eliminar', close: 'Aprobar y cerrar', manage: 'Configurar',
+};
+const AYUDA: Record<string, string> = {
+  'tasks.view_all': 'Ver el tablero de cualquier persona, «Todo el equipo» y sus métricas',
+  'tasks.view_own': 'Ver su propio tablero',
+  'tasks.create': 'Crearse tareas para sí',
+  'tasks.assign': 'Asignar o reasignar tareas a otras personas',
+  'tasks.edit': 'Editar las tareas que ve',
+  'tasks.delete': 'Archivar cualquier tarea y borrar comentarios de otros',
+  'tasks.close': 'Aprobar o devolver desde «Por revisar», y cerrar o reabrir una tarea («Hecha»)',
+  'tasks.manage': 'Configurar el tablero: columnas, áreas y proyectos propios',
+};
+const etiquetaAccion = (res: string, a: string) => (res === 'tasks' ? ACCION_ES[a] || a : a);
+
 interface RoleEntry {
   key: string;
   label: string;
@@ -35,6 +65,9 @@ export default function RolesPage() {
   const [selectedRole, setSelectedRole] = useState<string>('superadmin');
   const [customRoles, setCustomRoles] = useState<CustomRole[]>([]);
   const [customRolesAvailable, setCustomRolesAvailable] = useState<boolean | null>(null);
+  // El superadmin y el admin cambian los permisos de Tareas (Hugo, 09/10).
+  const { tieneRol } = usePermission();
+  const puedeEditarTareas = tieneRol('superadmin', 'admin');
 
   useEffect(() => {
     if (!activeProject?.id) return;
@@ -54,8 +87,9 @@ export default function RolesPage() {
     return () => { cancelled = true; };
   }, [activeProject?.id]);
 
+  const rolesDelSistema = [...FIXED_ROLES, ...ROLES_CON_TABLERO];
   const allRoles: RoleEntry[] = [
-    ...FIXED_ROLES.map((r): RoleEntry => ({ key: r.key, label: r.label, desc: r.desc, color: r.color })),
+    ...rolesDelSistema.map((r): RoleEntry => ({ key: r.key, label: r.label, desc: r.desc, color: r.color })),
     ...customRoles.map((r): RoleEntry => ({ key: `custom:${r.id}`, label: r.nombre, custom: r, color: 'amber', desc: r.descripcion || '' })),
   ];
   const role = allRoles.find((r) => r.key === selectedRole);
@@ -95,7 +129,7 @@ export default function RolesPage() {
         {/* Panel izquierdo: lista de roles */}
         <aside className="space-y-2">
           <h3 className="text-xs font-bold uppercase text-muted-foreground px-1">Roles del sistema</h3>
-          {FIXED_ROLES.map((r) => (
+          {rolesDelSistema.map((r) => (
             <button
               key={r.key}
               type="button"
@@ -156,12 +190,20 @@ export default function RolesPage() {
                   <h2 className="text-lg font-bold">{role.label}</h2>
                   <p className="text-xs text-muted-foreground">{role.desc}</p>
                 </div>
-                {!role.custom && (
+                {puedeEditarTareas && editaTareas(role.key) ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-primary/10 text-primary font-bold">
+                    <PencilSimple size={10} /> Tareas editables
+                  </span>
+                ) : !role.custom && (
                   <span className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-muted font-bold">
                     <Lock size={10} /> Solo lectura
                   </span>
                 )}
               </header>
+
+              {puedeEditarTareas && editaTareas(role.key) && (
+                <PermisosTareas roleKey={role.key} />
+              )}
 
               {/* Desktop table */}
               <div className="hidden md:block overflow-x-auto">
@@ -200,8 +242,8 @@ export default function RolesPage() {
                           ))}
                           <td className="py-2 px-2 text-center text-[11px] text-muted-foreground">
                             {others.length === 0 ? '—' : others.map((a) => (
-                              <span key={a} className={`inline-block px-1.5 mx-0.5 rounded ${has(a) ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-muted/40'}`}>
-                                {a}
+                              <span key={a} title={AYUDA[`${res.key}.${a}`]} className={`inline-block px-1.5 mx-0.5 rounded ${has(a) ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-muted/40'}`}>
+                                {etiquetaAccion(res.key, a)}
                               </span>
                             ))}
                           </td>
@@ -242,8 +284,8 @@ export default function RolesPage() {
                       {others.length > 0 && (
                         <div className="mt-2 pt-2 border-t border-border/50 flex flex-wrap gap-1">
                           {others.map((a) => (
-                            <span key={a} className={`inline-block px-1.5 py-0.5 rounded text-[10px] ${has(a) ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-muted/40 text-muted-foreground'}`}>
-                              {a}
+                            <span key={a} title={AYUDA[`${res.key}.${a}`]} className={`inline-block px-1.5 py-0.5 rounded text-[10px] ${has(a) ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300' : 'bg-muted/40 text-muted-foreground'}`}>
+                              {etiquetaAccion(res.key, a)}
                             </span>
                           ))}
                         </div>
@@ -254,7 +296,8 @@ export default function RolesPage() {
               </div>
 
               <p className="text-[11px] text-muted-foreground italic pt-2">
-                Los permisos de los 4 roles fijos están codificados en `ROLE_DEFAULT_PERMISSIONS` y no se pueden modificar.
+                Los permisos de los roles fijos están codificados en `ROLE_DEFAULT_PERMISSIONS` y no se pueden modificar,
+                salvo «Aprobar y cerrar» y «Configurar» de Tareas, que el superadmin y el admin cambian arriba (#210).
                 Para crear roles con permisos custom espera CRM-228.
               </p>
             </>
