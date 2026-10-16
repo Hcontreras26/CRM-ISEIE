@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { GraduationCap, Plus, X, Warning, Trash, CheckCircle, Copy, ArrowsClockwise, Key, UserMinus, PencilSimple, MagnifyingGlass} from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjectContext } from '@/contexts/ProjectContext';
@@ -9,9 +9,13 @@ import EmptyState from '@/shared/components/ui/EmptyState';
 import { Button } from '@/shared/components/ui/button';
 import BuscadorCurso from '../components/BuscadorCurso';
 import Entregables from '../components/Entregables';
+import CampoCobraDesde from '../components/CampoCobraDesde';
 import { tutoresApi, type Tutor, type Colaboracion, type AjustesTutores } from '../api/tutores.api';
 import { avisoCambioCorreo, confirmacionCambioCorreo, problemaDeContrasena } from '@/shared/lib/credenciales';
-import { cursosParaElAlta, avisoDelAlta, type CursoDelAlta, type CursoQueFallo } from '../lib/colaboraciones';
+import {
+  cursosParaElAlta, avisoDelAlta, type CursoDelAlta, type CursoQueFallo,
+  cobraDesdeActual, hayQueMandarCobraDesde, confirmacionCobraDesde, avisoCobraDesde,
+} from '../lib/colaboraciones';
 
 // Tutores y sus colaboraciones.
 //
@@ -67,8 +71,10 @@ export default function TutoresPage() {
     projects: Array<{ id: number; nombre: string }>;
   };
   const puede = ['admin', 'superadmin'].includes(user?.role || '') || user?.gestor_colaboraciones === true;
-  // El correo y la contraseña de un tutor, solo el super admin (#248).
+  // El correo de un tutor, solo el super admin (#248). La contraseña, también el
+  // admin (Diego, 09/10, #246).
   const esSuperadmin = user?.role === 'superadmin';
+  const puedeContrasena = esSuperadmin || user?.role === 'admin';
   const projectId = activeProject?.id && activeProject.id !== -1 ? activeProject.id : null;
 
   const [tutores, setTutores] = useState<Tutor[]>([]);
@@ -112,6 +118,11 @@ export default function TutoresPage() {
   // ponia una vez y despues no habia forma de verlo ni de cambiarlo.
   const [popupDatos, setPopupDatos] = useState(false);
   const [datos, setDatos] = useState({ nombre: '', dniNif: '', telefono: '', iban: '', banco: '', email: '', reenviar: true });
+  // «Cobra desde» en Editar tutor (Diego, 13/10): la fecha de inicio de TODAS
+  // sus colaboraciones activas. `tocado` importa: sin el, guardar el IBAN de un
+  // tutor con fechas distintas las igualaria todas a la mas antigua.
+  const [cobraDesde, setCobraDesde] = useState('');
+  const [cobraDesdeTocado, setCobraDesdeTocado] = useState(false);
   const [claveNueva, setClaveNueva] = useState('');
   const [claveRepetida, setClaveRepetida] = useState('');
   const [claveCopiada, setClaveCopiada] = useState(false);
@@ -186,6 +197,15 @@ export default function TutoresPage() {
     setColabs(r.success ? (r.data || []) : []);
   }, []);
 
+  // Lo que hay hoy: el valor inicial del campo es la fecha mas temprana de sus
+  // colaboraciones activas. Se rellena al abrir, y si las colaboraciones llegan
+  // con el dialogo ya abierto, tambien — mientras nadie haya tocado el campo.
+  const cobraActual = useMemo(() => cobraDesdeActual(colabs), [colabs]);
+  useEffect(() => {
+    if (!popupDatos) { setCobraDesdeTocado(false); return; }
+    if (!cobraDesdeTocado) setCobraDesde(cobraActual.desde || '');
+  }, [popupDatos, cobraActual.desde, cobraDesdeTocado]);
+
   function elegir(t: Tutor) { setElegido(t); cargarColabs(t); }
 
   function abrirColab() { setCursoColab(null); setPopupColab(true); }
@@ -216,6 +236,11 @@ export default function TutoresPage() {
       const aviso = await avisoCambioCorreo(elegido.id).catch(() => null);
       if (!window.confirm(confirmacionCambioCorreo(elegido.nombre || 'este tutor', elegido.email || '—', correoNuevo, aviso))) return;
     }
+    // Igualar fechas distintas se pregunta antes: es mover dinero de varios
+    // cursos a la vez.
+    const mandaFecha = hayQueMandarCobraDesde(cobraDesde, cobraDesdeTocado, cobraActual);
+    const pregunta = mandaFecha ? confirmacionCobraDesde(cobraDesde, cobraActual) : null;
+    if (pregunta && !window.confirm(pregunta)) return;
     setProcesando(true);
     try {
       const r = await tutoresApi.guardarPerfil(elegido.id, {
@@ -232,7 +257,28 @@ export default function TutoresPage() {
       if (datos.nombre.trim() && datos.nombre.trim() !== elegido.nombre) {
         await client.patch(`/users/${elegido.id}`, { nombre: datos.nombre.trim() });
       }
-      toast({ title: 'Datos guardados' });
+
+      // «Cobra desde», despues del perfil y por su propia puerta: lo puede
+      // tocar quien gestiona colaboraciones, no el tutor. Si falla, los datos
+      // ya estan guardados y se dice asi, sin mezclarlo.
+      if (mandaFecha) {
+        try {
+          const rc = await tutoresApi.cambiarCobraDesde(elegido.id, cobraDesde);
+          if (!rc?.success || !rc.data) throw new Error('no se pudo cambiar la fecha');
+          const a = avisoCobraDesde(rc.data);
+          toast({ ...a, description: `Datos guardados. ${a.description}` });
+        } catch (err) {
+          toast({
+            title: 'Datos guardados, pero la fecha no',
+            description: (err as { message?: string })?.message || 'Vuelve a intentarlo.',
+            variant: 'destructive',
+            duration: 0,
+          });
+        }
+        await cargarColabs(elegido);
+      } else {
+        toast({ title: 'Datos guardados' });
+      }
       setPopupDatos(false);
       await cargar();
     } catch (e) {
@@ -616,8 +662,8 @@ export default function TutoresPage() {
                       <Button variant="outline" size="sm" onClick={abrirDatos}>
                         <PencilSimple size={14} weight="bold" className="mr-1.5" /> Editar datos
                       </Button>
-                      {/* Solo el super admin (#248). */}
-                      {esSuperadmin && (
+                      {/* El super admin y el admin (#246). */}
+                      {puedeContrasena && (
                         <Button variant="outline" size="sm" onClick={abrirClave}>
                           <Key size={14} weight="bold" className="mr-1.5" /> Cambiar contraseña
                         </Button>
@@ -1073,6 +1119,13 @@ export default function TutoresPage() {
                 )}
               </div>
             )}
+
+            <CampoCobraDesde
+              colabs={colabs}
+              valor={cobraDesde}
+              onCambio={(v) => { setCobraDesde(v); setCobraDesdeTocado(true); }}
+              aplicaDesde={ajustes?.aplica_desde}
+            />
 
             <Button className="w-full" disabled={procesando} onClick={guardarDatos}>
               {procesando ? 'Guardando…' : 'Guardar'}

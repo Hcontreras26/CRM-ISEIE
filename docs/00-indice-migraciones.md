@@ -159,6 +159,18 @@ Fuente de verdad del esquema. Cada archivo en `backend/migrations/` es un SQL ej
 | 181 | 181_mcp_auditoria_visible_y_alertas.sql | MCP: actividad visible y alertas (#195) |
 | 182 | 182_mcp_interruptor.sql | Interruptor de emergencia del MCP (#196) |
 | 183 | 183_paso_hecho_a_mano.sql | Marcar un paso del proceso a mano: quién y cuándo (la 175 de MultiCRM, 09/10) |
+| 204 | 204_egresos_por_empresa.sql | Egresos por empresa (#227): `expenses.issuer_id` para los gastos de toda una empresa sin campus (la misma 204 de MultiCRM) |
+| 207 | 207_tasks_tablero.sql | Tablero de tareas del equipo (#210): `tasks`, historial, lista, comentarios y etiquetas (la 193 de MultiCRM) |
+| 208 | 208_rol_colaborador.sql | El rol `colaborador` en el ENUM `user_role`: solo ve su tablero de Tareas (la 194 de MultiCRM) |
+| 209 | 209_tasks_enlaces.sql | Enlaces de la tarjeta (`task_links`) (la 195 de MultiCRM) |
+| 210 | 210_tasks_areas_columns_external.sql | Columnas propias, áreas y proyectos propios del tablero (la 196 de MultiCRM) |
+| 211 | 211_permisos_por_rol.sql | Permisos de Tareas por rol desde Configuración › Roles (`role_permission_overrides`) (la 197 de MultiCRM) |
+| 220 | 220_facturas_colaborador.sql | Facturas de colaboradores (#202): `colaboradores`, `colaborador_empresas`, `facturas_colaborador` y su registro (la 198 de MultiCRM) |
+| 221 | 221_facturas_colaborador_desglose_y_pago.sql | Cómo cobra cada colaborador (fijo, por hora, por proyecto, IVA e IRPF), el desglose en líneas y el pago (la 201 de MultiCRM) |
+| 222 | 222_facturas_colaborador_importe_pdf.sql | El total que pone el PDF (`importe_pdf`): cuadra si es el importe escrito (la 202 de MultiCRM) |
+| 230 | 230_certifex_solicitudes_diploma.sql | Certifex · Diplomas (#272): solicitudes de diploma desde Moodle, lo revisado a mano antes de aprobar y el aviso «ha terminado la formación» (la 199 de MultiCRM). Reaplicable. **No aplicada (15/10)** |
+| 231 | 231_registro_tareas.sql | Sistema → Registro (#111): una fila por vuelta de cada tarea programada, con su limpieza en `jobs/latido.js` (la 144 de MultiCRM). Reaplicable. **No aplicada (15/10)** |
+| 232 | 232_mensajeria_interna.sql | Sistema → Mensajes: `conversations`, `conversation_participants` y `messages` (la 064 de MultiCRM, con IF NOT EXISTS). **No aplicada (15/10)** |
 
 > **09/10/2026, comprobado contra el catálogo de producción:** aplicadas hasta la **183** (la 183, el
 > 09/10 con la checklist manual).

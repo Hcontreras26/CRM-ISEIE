@@ -1,5 +1,5 @@
 // ============================================================
-// Bundles manifest - define que modulos backend pertenecen a cada bundle.
+// Bundles manifest — define que modulos backend pertenecen a cada bundle.
 // El loader de app.js consulta installation_bundles.active_bundles
 // y solo registra modulos cuyos bundles esten activos.
 //
@@ -13,25 +13,25 @@ export const BUNDLES = {
   core: {
     label: 'Core (obligatorio)',
     description: 'Auth, users, projects. Siempre activo.',
-    modules: ['auth', 'users', 'projects', 'credentials', 'field-definitions', 'project-channels', 'permissions', 'connectors'],
+    modules: ['auth', 'users', 'projects', 'credentials', 'field-definitions', 'project-channels', 'permissions', 'connectors', 'webhooks-salientes', 'messages', 'notifications', 'registro', 'correos', 'novedades', 'mcp', 'certifex', 'tasks'],
     requires: [],
   },
   leads: {
     label: 'Leads / Captacion',
     description: 'Pipeline + audiencias + forms + webhooks',
-    modules: ['leads', 'forms', 'webhook-tokens', 'audiences', 'make', 'widget'],
+    modules: ['leads', 'proceso', 'feedback', 'convocatorias', 'forms', 'webhook-tokens', 'audiences', 'make', 'meta-ads', 'widget', 'whatsapp'],
     requires: ['core'],
   },
   comercial: {
     label: 'Comercial / Ventas',
-    description: 'Productos + conversiones + comisiones + matriculas + dossiers',
-    modules: ['products', 'product-categories', 'conversions', 'commissions', 'tutores', 'matriculas', 'dossiers', 'documents'],
+    description: 'Productos + conversiones + comisiones + tutores + matriculas + dossiers',
+    modules: ['products', 'product-categories', 'conversions', 'sales', 'commissions', 'tutores', 'matriculas', 'dossiers', 'documents'],
     requires: ['core'],
   },
   accounting: {
     label: 'Contabilidad',
     description: 'Ingresos + egresos + cuentas por cobrar/pagar + integraciones (Stripe/Brevo)',
-    modules: ['accounting', 'accounts-payable', 'integrations', 'stripe-payments', 'invoices'],
+    modules: ['accounting', 'expenses', 'accounts-payable', 'integrations', 'stripe-payments', 'invoices', 'facturas-colaborador'],
     requires: ['core'],
   },
   payroll: {
@@ -49,7 +49,7 @@ export const BUNDLES = {
   marketing: {
     label: 'Marketing avanzado',
     description: 'Meta Ads, Google Ads, GSC organico, email seguimiento',
-    modules: ['email-sequences', 'email-templates'],
+    modules: ['email-sequences', 'email-templates'],  // meta-ads, google-ads, gsc pendientes implementar
     requires: ['core', 'leads'],
   },
   ecommerce: {

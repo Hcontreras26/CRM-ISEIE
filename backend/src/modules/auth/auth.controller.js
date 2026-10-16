@@ -1,7 +1,8 @@
 import * as authService from './auth.service.js';
 import { sanitizeProjects } from './auth.service.js';
 import * as authModel from './auth.model.js';
-import { loginSchema, setPasswordSchema, changePasswordSchema, updateMyProfileSchema } from './auth.validation.js';
+import { loginSchema, setPasswordSchema, changePasswordSchema, updateMyProfileSchema, updateMyEmailSchema } from './auth.validation.js';
+import * as userService from '../users/user.service.js';
 import { AppError } from '../../shared/utils/AppError.js';
 import bcrypt from 'bcrypt';
 import { query } from '../../shared/config/db.js';
@@ -133,7 +134,8 @@ export async function changePassword(req, res, next) {
 
     const { rows } = await query('SELECT password_hash FROM users WHERE id = $1', [userId]);
     if (!rows[0]) throw new AppError('Usuario no encontrado', 404, 'USER_NOT_FOUND');
-    const ok = await bcrypt.compare(currentPassword, rows[0].password_hash);
+    // Sin contraseña puesta (alta sin clave), bcrypt reventaba con un 500 (MultiCRM 86c5be82).
+    const ok = rows[0].password_hash ? await bcrypt.compare(currentPassword, rows[0].password_hash) : false;
     // 400 y no 401: un 401 hace que la pantalla intente renovar la sesion,
     // cuando lo unico que ha pasado es que la contraseña actual no es esa.
     if (!ok) throw new AppError('La contraseña actual no es correcta', 400, 'INVALID_CURRENT_PASSWORD');
@@ -204,4 +206,28 @@ export async function me(req, res, next) {
   } catch (err) {
     next(err);
   }
+}
+
+// PATCH /api/auth/me/email — un TUTOR cambia su propio correo (#246, Diego 09/10:
+// «sí, y debe mandar notificación, aunque actualmente no tienen acceso»). El resto
+// de roles lo sigue pidiendo a administración. Es la credencial: al cambiarlo se
+// cierran sus sesiones y tiene que volver a entrar con el nuevo. Se avisa a
+// administración, porque es el correo de la factura de su comisión.
+export async function updateMyEmail(req, res, next) {
+  try {
+    if (req.user?.role !== 'tutor') {
+      throw new AppError('Tu correo lo cambia administración', 403, 'FORBIDDEN');
+    }
+    const parsed = updateMyEmailSchema.safeParse(req.body);
+    if (!parsed.success) throw new AppError(parsed.error.issues[0].message, 400, 'VALIDATION_ERROR');
+    const userId = req.user.userId;
+    const { rows: [yo] } = await query('SELECT nombre, email FROM users WHERE id = $1', [userId]);
+    if (!yo) throw new AppError('Usuario no encontrado', 404, 'NOT_FOUND');
+    const r = await userService.cambiarCorreo(userId, parsed.data.email, { porUserId: userId, ip: getClientIp(req) });
+    if (r.cambiado) {
+      await userService.avisarCorreoDeTutorCambiado({ tutorId: userId, nombre: yo.nombre, de: yo.email, a: r.email })
+        .catch(() => {});
+    }
+    res.json({ success: true, data: { email: r.email, cambiado: r.cambiado, hayQueVolverAEntrar: r.cambiado } });
+  } catch (err) { next(err); }
 }

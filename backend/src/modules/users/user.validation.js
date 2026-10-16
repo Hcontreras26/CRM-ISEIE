@@ -13,17 +13,60 @@ const projectAssignmentSchema = z.object({
   recibeLeads: z.boolean().optional().default(false),
 });
 
+// Las empresas enteras de un admin (#220): ids de `invoice_issuers`, la sociedad
+// emisora de cada campus. Que existan lo mira el servicio contra la base.
+const empresaIdsSchema = z.array(z.number().int().positive()).max(50).optional();
+
+const tieneCampus = (d) => d.projectIds?.length > 0 || d.projects?.length > 0;
+
 export const createUserSchema = z.object({
   nombre: z.string().min(2, 'Nombre minimo 2 caracteres').max(200),
   email: z.string().email('Email invalido').transform((v) => v.toLowerCase().trim()),
-  role: z.enum(['admin', 'gestor', 'soporte', 'tutor'], { message: 'Rol debe ser admin, gestor, soporte o tutor' }),
+  role: z.enum(['admin', 'gestor', 'soporte', 'tutor', 'colaborador'], { message: 'Rol debe ser admin, gestor, soporte, tutor o colaborador' }),
   // Roles de MAS. Superadmin no cabe: un rol añadido no puede dar acceso total.
-  roles_extra: z.array(z.enum(['admin', 'gestor', 'soporte', 'tutor'])).optional(),
+  roles_extra: z.array(z.enum(['admin', 'gestor', 'soporte', 'tutor', 'colaborador'])).optional(),
   // Legacy: lista de ids (recibe_leads queda en false).
   projectIds: z.array(z.number().int().positive()).optional().default([]),
   // Nuevo: lista con flag recibe_leads por proyecto.
   projects: z.array(projectAssignmentSchema).optional(),
-});
+  // Empresas ENTERAS de un admin, también los campus que se creen (#220). Solo
+  // las da el super admin: lo comprueba el controlador.
+  empresaIds: empresaIdsSchema,
+}).refine(
+  (d) => d.role !== 'gestor' || tieneCampus(d),
+  {
+    message: 'Una gestora sin campus no ve nada: elige al menos uno',
+    path: ['projectIds'],
+  }
+).refine(
+  (d) => d.role !== 'admin' || tieneCampus(d) || d.empresaIds?.length > 0,
+  {
+    message: 'Un admin sin campus ni empresa no ve nada: marca un campus o una empresa entera',
+    path: ['projectIds'],
+  }
+).refine(
+  (d) => !(d.empresaIds?.length > 0) || d.role === 'admin',
+  {
+    message: 'Solo un admin puede tener una empresa entera',
+    path: ['empresaIds'],
+  }
+);
+
+/*
+ * EL MINIMO DE CAMPUS, Y POR QUE NO ES PARA TODOS (#220, como en MultiCRM)
+ *
+ * Aqui se podia dar de alta un admin o una gestora sin ningun campus: el alta
+ * parecia buena y la persona entraba a un CRM vacio, con 403 en cada pantalla
+ * (`projectAccess` mira `user_projects`). Lo decide el rol:
+ *
+ *   admin    -> un campus o una empresa entera (Diego, 10/10: «mayormente los
+ *               admin son por empresa»): con la empresa le llegan los de hoy y
+ *               los que se creen despues.
+ *   gestor   -> al menos un campus. Sin el, ni ve prospectos ni entra en el
+ *               reparto.
+ *   soporte  -> sin minimo: `projectAccess` le deja pasar sin mirar.
+ *   tutor    -> se da de alta por `tutor.controller.js`, sin este esquema.
+ */
 
 // Los permisos acotados de facturacion y colaboraciones.
 //
@@ -41,13 +84,15 @@ export const updateUserSchema = z.object({
   // Con el correo nuevo, mandarle el enlace para poner contraseña allí (#246).
   // A un tutor no le sale nada mientras siga el freno.
   reenviarEnlace: z.boolean().optional(),
-  role: z.enum(['admin', 'gestor', 'soporte', 'tutor']).optional(),
-  roles_extra: z.array(z.enum(['admin', 'gestor', 'soporte', 'tutor'])).optional(),
+  role: z.enum(['admin', 'gestor', 'soporte', 'tutor', 'colaborador']).optional(),
+  roles_extra: z.array(z.enum(['admin', 'gestor', 'soporte', 'tutor', 'colaborador'])).optional(),
   factura_manager: z.boolean().optional(),
   editar_fechas_factura: z.boolean().optional(),
   gestor_colaboraciones: z.boolean().optional(),
   projectIds: z.array(z.number().int().positive()).optional(),
   projects: z.array(projectAssignmentSchema).optional(),
+  // Las empresas enteras (#220). Una lista vacía las quita; sus campus se quedan.
+  empresaIds: empresaIdsSchema,
   // Teléfono del gestor (WhatsApp): usado por el widget y para contacto.
   whatsapp_phone: z.string().max(30).nullable().optional().or(z.literal('')),
   whatsapp_display_name: z.string().max(120).nullable().optional().or(z.literal('')),
@@ -65,10 +110,20 @@ export const adminSetPasswordSchema = z.object({
 
 export const listUsersSchema = z.object({
   active: z.enum(['true', 'false']).optional(),
-  role: z.enum(['superadmin', 'admin', 'gestor', 'soporte', 'tutor']).optional(),
+  role: z.enum(['superadmin', 'admin', 'gestor', 'soporte', 'tutor', 'colaborador']).optional(),
   projectId: z.coerce.number().int().positive().optional(),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
   // La pantalla de Usuarios los pide expresamente; el resto de listas no.
   incluirTodos: z.enum(['true', 'false']).optional().transform((v) => v === 'true'),
+});
+
+// El registro de «Actividad». Un `userId` que no es número era un 500 de
+// Postgres; ahora es un 400.
+export const activityLogSchema = z.object({
+  userId: z.coerce.number().int().positive().optional(),
+  action: z.string().trim().max(100).optional(),
+  search: z.string().trim().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(500).default(100),
+  offset: z.coerce.number().int().min(0).default(0),
 });

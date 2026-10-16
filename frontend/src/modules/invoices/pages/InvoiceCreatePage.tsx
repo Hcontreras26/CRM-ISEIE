@@ -107,7 +107,7 @@ export default function InvoiceCreatePage() {
   const [llevaIva, setLlevaIva] = useState(true);
   const [ivaIncluido, setIvaIncluido] = useState(false);
   const [items, setItems] = useState<InvoiceItem[]>([{ descripcion: '', cantidad: 1, precio_unitario: 0 }]);
-  const [metodoPago, setMetodoPago] = useState<'transferencia' | 'tarjeta' | 'tarjeta_stripe' | 'efectivo' | 'bizum' | 'fraccionado' | 'otro'>('transferencia');
+  const [metodoPago, setMetodoPago] = useState<'transferencia' | 'deposito' | 'tarjeta' | 'tarjeta_stripe' | 'efectivo' | 'bizum' | 'fraccionado' | 'otro'>('transferencia');
   const [moneda, setMoneda] = useState('EUR');
   // Doble moneda: importe total en EUROS tecleado a mano (obligatorio si moneda != EUR).
   const [totalEur, setTotalEur] = useState(''); // divisa de la factura (importes manuales, sin conversión)
@@ -237,7 +237,7 @@ export default function InvoiceCreatePage() {
             };
           }));
           // Método de pago de la conversión, si encaja con los válidos de factura.
-          const MP = ['transferencia', 'tarjeta', 'tarjeta_stripe', 'efectivo', 'bizum', 'fraccionado', 'otro'];
+          const MP = ['transferencia', 'deposito', 'tarjeta', 'tarjeta_stripe', 'efectivo', 'bizum', 'fraccionado', 'otro'];
           const mp = convs[0]?.metodo_pago;
           if (mp && MP.includes(mp)) setMetodoPago(mp as typeof metodoPago);
         }
@@ -280,7 +280,7 @@ export default function InvoiceCreatePage() {
         clienteNombre: cNombre, clienteNif: cNif,
         // Empresa o persona: decide el rotulo del PDF ("RAZON SOCIAL" o
         // "NOMBRE Y APELLIDO"). Al contado se factura a un particular.
-        clienteTipo: tipo === 'empresa' ? 'empresa' : 'particular',
+        clienteTipo: tipo === 'empresa' ? ('empresa' as const) : ('particular' as const),
         clienteDireccion: direccion.trim(), clienteCiudad: ciudad.trim(), clienteCp: cp.trim(), clientePais: pais.trim() || 'España',
         clienteEmail: email.trim() || null, clienteTelefono: telefono.trim() || null,
         items: items.filter((it) => it.descripcion.trim()),
@@ -729,7 +729,7 @@ export default function InvoiceCreatePage() {
         <div className="bg-card border border-border rounded-lg p-4 space-y-2">
           <label className="text-xs font-bold uppercase text-muted-foreground">Pago</label>
           <select value={metodoPago} onChange={(e) => setMetodoPago(e.target.value as 'transferencia')} className="w-full h-9 px-2 rounded border border-border bg-background text-sm">
-            <option value="transferencia">Transferencia bancaria</option><option value="tarjeta">Tarjeta</option><option value="tarjeta_stripe">Tarjeta (Stripe)</option>
+            <option value="transferencia">Transferencia bancaria</option><option value="deposito">Depósito bancario</option><option value="tarjeta">Tarjeta</option><option value="tarjeta_stripe">Tarjeta (Stripe)</option>
             <option value="efectivo">Efectivo</option><option value="bizum">Bizum</option><option value="paypal">PayPal</option><option value="fraccionado">Fraccionado</option><option value="otro">Otro</option>
           </select>
           <div>

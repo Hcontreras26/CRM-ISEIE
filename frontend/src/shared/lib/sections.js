@@ -12,6 +12,7 @@ import {
   Wallet, CurrencyEur, ChartLineUp, Envelope, EnvelopeOpen, Pulse,
   FilePdf, ListNumbers,
 } from '@phosphor-icons/react';
+import { SOLO_EN_PRUEBAS } from '@/shared/lib/enPruebas';
 
 export const SECTIONS = [
   {
@@ -30,7 +31,9 @@ export const SECTIONS = [
     roles: ['admin', 'superadmin'],
     tabs: [
       { to: '/forms',                label: 'Formularios',     icon: FileText },
-      { to: '/make-webhooks',        label: 'Make / Webhooks', icon: WebhooksLogo },
+      { to: '/make-webhooks',        label: 'Make',            icon: WebhooksLogo },
+      // Su propia pantalla desde el #226: antes /webhooks llevaba a la de Make.
+      { to: '/webhooks',             label: 'Webhooks',        icon: WebhooksLogo },
       { to: '/captacion/whatsapp',   label: 'Widget WhatsApp', icon: WebhooksLogo },
     ],
   },
@@ -63,6 +66,8 @@ export const SECTIONS = [
       { to: '/accounting/pendiente-facturar', label: 'Pendientes facturar', icon: Calculator, roles: ['admin', 'superadmin'] },
       { to: '/accounting/pagos-stripe',       label: 'Pagos Stripe',      icon: Calculator,  roles: ['admin', 'superadmin'] },
       { to: '/accounting/facturas',           label: 'Facturación',       icon: Receipt,     roles: ['admin', 'superadmin', 'soporte'] },
+      // Facturas de colaboradores (#202): en evaluación, solo en /staging y en local.
+      { to: '/accounting/facturas-colaboradores', label: 'Facturas de colaboradores', icon: Receipt, roles: ['admin', 'superadmin'] },
       { to: '/accounting/integrations',       label: 'Integraciones',     icon: Calculator,  roles: ['admin', 'superadmin'] },
     ],
   },

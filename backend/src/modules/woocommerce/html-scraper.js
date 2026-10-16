@@ -559,4 +559,4 @@ export async function scrapeProductPage(url, sectionKeywords = {}, opts = {}) {
   return result;
 }
 
-export { htmlToText, sliceSectionByKeywords, extractMetaBox, extractH1, parseMetaValue };
+export { htmlToText, sliceSectionByKeywords, extractMetaBox, extractH1, parseMetaValue, fetchHtmlWithRetry };

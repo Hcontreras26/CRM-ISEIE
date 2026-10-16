@@ -12,6 +12,9 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardSummary } from '@/shared/hooks/useDashboardSummary';
 import client from '@/shared/api/client';
+// Faltaba: los botones de PDF y Excel llamaban a `toast` sin importarlo y, al acabar,
+// reventaban con un ReferenceError (lo cazó el linter de la CI).
+import { toast } from '@/shared/hooks/useToast';
 import ReportsDownloadSection from '@/shared/components/ReportsDownloadSection';
 import AsesorasPanel from '@/shared/components/AsesorasPanel';
 import RankingsPanel from '@/shared/components/RankingsPanel';

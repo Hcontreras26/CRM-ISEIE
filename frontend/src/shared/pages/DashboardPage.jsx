@@ -139,6 +139,12 @@ export default function DashboardPage() {
   const { activeProject } = useProjectContext();
   const { stats, leadsRecientes, today, loading, error, refetch } = useDashboard();
   const [drawerLeadId, setDrawerLeadId] = useState(null);
+  // El proyecto de verdad, o nada. Con «Todos» `activeProject.id` vale -1, el
+  // pseudo-proyecto de «todos», y mandarlo como identificador dejaba las
+  // tarjetas de ventas a cero (y ahora daría un 403: -1 no es un campus de
+  // nadie). Con null el servidor mira los campus de la persona. Igual que en
+  // MultiCRM.
+  const proyectoReal = activeProject?.id && activeProject.id !== -1 ? activeProject.id : null;
 
   if (loading) {
     return (
@@ -147,7 +153,7 @@ export default function DashboardPage() {
 
       {/* Como va quien mira: su puesto en ventas y su tasa de
           conversion del mes. */}
-      {PROCESO_EN_PRUEBAS && <ComoVoy />}
+      {PROCESO_EN_PRUEBAS && <ComoVoy medida="facturado" />}
         <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => <SkeletonCard key={i} />)}
         </div>
@@ -392,13 +398,16 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Cursos vendidos (hoy / semana / mes / personalizado) + Programas más vendidos */}
+      {/* Cursos vendidos (hoy / semana / mes / personalizado) + Programas más vendidos.
+          EL DASHBOARD CUENTA LO FACTURADO (#224, Diego 10/10), aquí y en el
+          bloque del equipo de arriba: las dos tarjetas y el bloque salen de
+          `/ventas/facturado`, así que con el mismo mes dan la misma cifra. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Suspense fallback={null}>
-          <CursosVendidosCard projectId={activeProject?.id} />
+          <CursosVendidosCard projectId={proyectoReal} medida="facturado" />
         </Suspense>
         <Suspense fallback={null}>
-          <TopProductsCard projectId={activeProject?.id} days={null} limit={5} />
+          <TopProductsCard projectId={proyectoReal} days={null} limit={5} medida="facturado" />
         </Suspense>
       </div>
 

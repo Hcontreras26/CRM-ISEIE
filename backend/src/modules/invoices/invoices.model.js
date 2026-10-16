@@ -18,6 +18,50 @@ async function issuerOfProject(exec, projectId) {
 // de una misma sociedad comparten contador por serie+año, aunque sean de proyectos
 // distintos. Si el proyecto no tiene sociedad (issuerId null) cae al contador por
 // proyecto (legacy). Atómico dentro de la transacción vía FOR UPDATE / índice único.
+/**
+ * Reservar un numero ELEGIDO A MANO (traída de MultiCRM, 30df5fd8).
+ *
+ * `updateDraft` ya la llamaba para cambiar el número de una factura numerada
+ * (c3ac430, 18/09) pero aquí no existía: cambiar el número daba un 500
+ * (ReferenceError). Lo cazó el linter de la CI.
+ *
+ * Diego, 14/09: «que se ponga con numero de factura y que salga el numero
+ * siguiente disponible, pero que pueda poner ese u otro».
+ *
+ * Se comprueba dentro de la misma transaccion y con el mismo cerrojo que el
+ * automatico: si no, dos personas eligiendo el mismo numero a la vez lo
+ * cogerian las dos. Y si ya esta usado se dice CUAL lo tiene, que es lo que
+ * hace falta para decidir --un numero repetido en una serie fiscal no es un
+ * aviso, es un problema--.
+ */
+export async function reservarNumero(client, projectId, issuerId, ano, serie, numero) {
+  const n = Number(numero);
+  if (!Number.isInteger(n) || n <= 0) {
+    throw new AppError('El número de factura tiene que ser un entero mayor que cero', 400, 'BAD_NUMBER');
+  }
+  await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`invoice_serie:${ano}:${serie}`]);
+  const { rows: [ocupado] } = await client.query(
+    `SELECT codigo, cliente_nombre, total, fecha_emision::date::text AS fecha
+       FROM invoices WHERE ano = $1 AND serie = $2 AND numero = $3 LIMIT 1`,
+    [ano, serie, n]
+  );
+  if (ocupado) {
+    throw new AppError(
+      `El número ${ano}/${String(n).padStart(4, '0')} ya lo tiene la factura de `
+      + `${ocupado.cliente_nombre || 'sin nombre'} (${Number(ocupado.total).toFixed(2)} €, ${ocupado.fecha}). `
+      + 'Elige otro.',
+      409, 'NUMBER_TAKEN');
+  }
+  // El contador solo sube: si se rellena un hueco anterior, no se baja, porque
+  // el siguiente automatico volveria a chocar con lo que ya existe.
+  await client.query(
+    `UPDATE invoice_sequences SET ultimo_numero = GREATEST(ultimo_numero, $1)
+      WHERE ano = $2 AND serie = $3`,
+    [n, ano, serie]
+  );
+  return n;
+}
+
 export async function nextNumero(client, projectId, issuerId, ano, serie) {
   // El numero es unico por SERIE Y AÑO, mire desde el proyecto que mire.
   //
@@ -803,7 +847,7 @@ async function numerarBorrador(invoiceId) {
 // Si había borrador → se numera tal cual. Si no había factura → se crea emitida
 // con los datos de la conversión + lo que el lead tenga (faltantes = '—').
 // Los datos incompletos NO bloquean la numeración, solo enviar/descargar.
-const METODOS_PAGO_VALIDOS = ['transferencia', 'tarjeta', 'tarjeta_stripe', 'efectivo', 'bizum', 'paypal', 'fraccionado', 'otro'];
+const METODOS_PAGO_VALIDOS = ['transferencia', 'deposito', 'tarjeta', 'tarjeta_stripe', 'efectivo', 'bizum', 'paypal', 'fraccionado', 'otro'];
 
 // Datos fiscales del cliente + snapshot de la conversión, para armar la factura.
 async function _convDataParaFactura(conversionId) {
@@ -973,13 +1017,19 @@ export async function emitirFacturaDePago(conversionId, { paymentId, importe, sa
   // mano y luego se asocia el pago de Stripe). Si ya hay una factura de esta venta por
   // ese mismo importe y sin pago vinculado, se le engancha este pago en vez de emitir
   // otra: así queda vinculada y NO se duplica el importe facturado.
+  //
+  // Pero solo si ESTE cobro es el suyo (13/10, ver HUERFANA_ES_DE): una venta a
+  // plazos tiene varios cobros del mismo importe, y la factura del pago inicial no
+  // puede quedarse con la cuota de la semana siguiente.
   const { rows: huerfana } = await query(
-    `SELECT * FROM invoices
-      WHERE conversion_id = $1 AND payment_id IS NULL
-        AND tipo = 'normal' AND estado <> 'cancelada'
-        AND ABS(total - $2::numeric) < 0.01
-      ORDER BY id LIMIT 1`,
-    [conversionId, monto]
+    `SELECT h.* FROM invoices h
+       JOIN conversion_payments cp ON cp.id = $3
+      WHERE h.conversion_id = $1 AND h.payment_id IS NULL
+        AND h.tipo = 'normal' AND h.estado <> 'cancelada'
+        AND ABS(h.total - $2::numeric) < 0.01
+        AND ${HUERFANA_ES_DE('h', 'cp')}
+      ORDER BY h.id LIMIT 1`,
+    [conversionId, monto, paymentId]
   );
   if (huerfana[0]) {
     const { rows: upd } = await query(
@@ -1843,13 +1893,40 @@ export async function listProformasPendientes(projectId) {
   Si el CRM la considera suya para engancharla, la cola tiene que considerarla
   suya para no volver a pedirla.
 */
+/*
+  PERO UNA FACTURA HUERFANA CUBRE UN SOLO COBRO (13/10).
+
+  Diego: «esta factura del 12 que fue automatica no salio en facturacion». Mirna
+  Flores, venta 628 de Psiko Aprende: pago inicial de 150 € el 05/10, facturado
+  desde la venta (2026/0177, sin cobro enganchado), y cuota de 150 € por Stripe el
+  12/10. La regla de arriba daba la 0177 por buena para CUALQUIER cobro de 150 €
+  de esa venta, asi que la cuota desaparecia de la cola sin factura. Y «Generar
+  factura» le habria enganchado la 0177 en vez de emitir la suya.
+
+  Ahora la huerfana es de UN cobro: el del mismo importe, todavia sin factura
+  propia, con la fecha mas cercana a la de la factura (a igual distancia, el de id
+  mas bajo). En los dos casos reales sale bien: la 0177 (06/10) va con el cobro del
+  05/10, y la 2026/0004 de la venta 89 (19/07) con el del 19/07, no con los de
+  marzo a junio del mismo importe.
+*/
+const HUERFANA_ES_DE = (h, cp) => `NOT EXISTS (
+        SELECT 1 FROM conversion_payments q
+         WHERE q.conversion_id = ${cp}.conversion_id
+           AND q.id <> ${cp}.id
+           AND ABS(q.importe - ${h}.total) < 0.01
+           AND NOT EXISTS (SELECT 1 FROM invoices iq
+                            WHERE iq.payment_id = q.id AND iq.estado <> 'cancelada')
+           AND (ABS(q.fecha - ${h}.fecha_emision::date), q.id)
+             < (ABS(${cp}.fecha - ${h}.fecha_emision::date), ${cp}.id))`;
+
 const FACTURA_HUERFANA_LO_CUBRE = `AND NOT EXISTS (
         SELECT 1 FROM invoices h
          WHERE h.conversion_id = cp.conversion_id
            AND h.payment_id IS NULL
            AND h.tipo = 'normal'
            AND h.estado <> 'cancelada'
-           AND ABS(h.total - cp.importe) < 0.01)`;
+           AND ABS(h.total - cp.importe) < 0.01
+           AND ${HUERFANA_ES_DE('h', 'cp')})`;
 
 /*
   Y UNA FACTURA QUE YA CUBRE LA VENTA ENTERA, TAMBIEN (06/10).

@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import { WarningCircle, ArrowClockwise } from '@phosphor-icons/react';
+import { API_BASE_URL } from '@/shared/api/client';
 
 /**
  * ErrorBoundary global. Captura errores no manejados en cualquier descendiente
@@ -22,8 +23,11 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, info) {
     console.error('[ErrorBoundary]', error, info?.componentStack);
+    // Y al servidor, que es donde alguien lo puede ver: sin esto una pantalla rota
+    // solo deja rastro en el navegador de quien la sufre.
+    // `API_BASE_URL` y no '/api': desde /staging, '/api' era la API de PRODUCCIÓN.
     try {
-      fetch('/api/client-errors', {
+      fetch(`${API_BASE_URL}/client-errors`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -35,7 +39,7 @@ export default class ErrorBoundary extends Component {
         }),
         credentials: 'include',
       }).catch(() => {});
-    } catch {}
+    } catch { /* que avisar no rompa la pantalla de error */ }
   }
 
   handleReset = () => {

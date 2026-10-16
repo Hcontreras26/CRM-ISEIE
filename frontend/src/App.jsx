@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Suspense, lazy, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { PROCESO_EN_PRUEBAS, SOLO_EN_PRUEBAS } from '@/shared/lib/enPruebas';
+import { PROCESO_EN_PRUEBAS } from '@/shared/lib/enPruebas';
 
 // Layout y guardas
 const AppLayout = lazy(() => import('./shared/components/layout/AppLayout'));
@@ -49,6 +49,11 @@ const InvoicesPage = lazy(() => import('./modules/invoices/pages/InvoicesPage'))
 const InvoicingConfigPage = lazy(() => import('./modules/invoices/pages/InvoicingConfigPage'));
 const InvoiceTemplateEditorPage = lazy(() => import('./modules/invoices/pages/InvoiceTemplateEditorPage'));
 const InvoiceCreatePage = lazy(() => import('./modules/invoices/pages/InvoiceCreatePage'));
+// Facturas de colaboradores (#202, como en MultiCRM): la lista de administración,
+// «Mi factura» del colaborador con usuario y la página pública del enlace.
+const FacturasColaboradoresPage = lazy(() => import('./modules/facturas-colaborador/pages/FacturasColaboradoresPage'));
+const MiFacturaPage = lazy(() => import('./modules/facturas-colaborador/pages/MiFacturaPage'));
+const FacturaEnlacePage = lazy(() => import('./modules/facturas-colaborador/pages/FacturaEnlacePage'));
 const RevenuePage = lazy(() => import('./modules/revenue/pages/RevenuePage'));
 const ChannelsConfigPage = lazy(() => import('./modules/settings/pages/ChannelsConfigPage'));
 const ShortcutsConfigPage = lazy(() => import('./modules/settings/pages/ShortcutsConfigPage'));
@@ -77,6 +82,10 @@ const NovedadesPage = lazy(() => import('./modules/novedades/pages/NovedadesPage
 const NotificacionesPage = lazy(() => import('./modules/notificaciones/pages/NotificacionesPage'));
 const ActivityPage = lazy(() => import('./shared/pages/ActivityPage'));
 const StatusPage = lazy(() => import('./shared/pages/StatusPage'));
+// Sistema → Registro (#111), traído de MultiCRM (paridad, 15/10).
+const RegistroPage = lazy(() => import('./modules/registro/pages/RegistroPage'));
+// Sistema → Mensajes: el chat interno del equipo, traído de MultiCRM (paridad, 15/10).
+const MessagesPage = lazy(() => import('./modules/messages/pages/MessagesPage'));
 
 // Módulos portados desde el hermano (paridad 2026-05-22).
 const RolesPage = lazy(() => import('./modules/permissions/pages/RolesPage'));
@@ -85,6 +94,8 @@ const CategoriesTreePage = lazy(() => import('./modules/product-categories/pages
 const MatriculasPage = lazy(() => import('./modules/matriculas/pages/MatriculasPage'));
 const McpPage = lazy(() => import('./modules/mcp/pages/McpPage'));
 const ConnectorsPage = lazy(() => import('./modules/connectors/pages/ConnectorsPage'));
+// Conexión → Webhook de transferencias (Diego, 15/10), como en MultiCRM.
+const WebhookTransferenciasPage = lazy(() => import('./modules/webhooks-salientes/pages/WebhookTransferenciasPage'));
 const AccountsPayablePage = lazy(() => import('./modules/accounts-payable/pages/AccountsPayablePage'));
 const PayrollPage = lazy(() => import('./modules/payroll/pages/PayrollPage'));
 const DocumentsPage = lazy(() => import('./modules/documents/pages/DocumentsPage'));
@@ -95,6 +106,11 @@ const EmailSequencesPage = lazy(() => import('./modules/email-sequences/pages/Em
 const EmailTemplatesPage = lazy(() => import('./modules/email-templates/pages/EmailTemplatesPage'));
 const MakeWebhooksPage = lazy(() => import('./modules/make-webhooks/pages/MakeWebhooksPage'));
 const MakeWebhookDetailPage = lazy(() => import('./modules/make-webhooks/pages/MakeWebhookDetailPage'));
+// Webhooks entrantes (Zapier, n8n, cualquier POST): traídos de MultiCRM (#226).
+// El servidor ya los tenía —`form_templates` con kind='webhook'—; faltaba la
+// pantalla, y la entrada del menú llevaba a la de Make.
+const WebhooksPage = lazy(() => import('./modules/webhooks/pages/WebhooksPage'));
+const WebhookDetailPage = lazy(() => import('./modules/webhooks/pages/WebhookDetailPage'));
 const WooCommercePage = lazy(() => import('./modules/woocommerce/pages/WooCommercePage'));
 const ColaDelDiaPage = lazy(() => import('./modules/proceso/pages/ColaDelDiaPage'));
 // El repaso de fin de mes: toda la base que no compro. No es la cola del dia.
@@ -102,6 +118,9 @@ const SeguimientoPage = lazy(() => import('./modules/proceso/pages/SeguimientoPa
 const ProcesoPage = lazy(() => import('./modules/proceso/pages/ProcesoPage'));
 // Las becas: las campañas, su embudo y a quién se le debe respuesta (#86).
 const ConvocatoriasPage = lazy(() => import('./modules/convocatorias/pages/ConvocatoriasPage'));
+// El tablero de tareas del equipo (#210, como en MultiCRM): solo en pruebas.
+const TasksPage = lazy(() => import('./modules/tasks/pages/TasksPage'));
+const TaskBoardConfigPage = lazy(() => import('./modules/tasks/pages/TaskBoardConfigPage'));
 
 const ROUTE_TITLES = {
   '/dashboard':                       'Dashboard',
@@ -122,13 +141,19 @@ const ROUTE_TITLES = {
   '/accounting/pagos-stripe':         'Pagos Stripe',
   '/accounting/facturas':             'Facturas',
   '/accounting/facturas/configuracion':'Configuración de facturación',
+  '/accounting/facturas-colaboradores': 'Facturas de colaboradores',
+  '/mi-factura':                      'Mi factura',
   '/payroll':                         'Nóminas',
   '/matriculas':                      'Matrículas',
   '/conexion/mcp':                    'MCP',
   '/conexion/conectores':             'Conectores',
+  '/conexion/webhook-transferencias': 'Webhook de transferencias',
   '/matriculas/certificaciones':      'Certificaciones',
+  '/matriculas/diplomas':            'Diplomas',
   '/forms':                           'Formularios',
-  '/make-webhooks':                   'Make / Webhooks',
+  '/make-webhooks':                   'Make',
+  '/webhooks':                        'Webhooks',
+  '/accounting':                      'Dashboard de finanzas',
   '/woocommerce':                     'WooCommerce',
   '/secuencias-email':                 'Secuencias de email',
   '/email-templates':                 'Plantillas de email',
@@ -136,7 +161,12 @@ const ROUTE_TITLES = {
   '/configuracion/categorias-arbol':  'Categorías',
   '/configuracion/campos':            'Campos personalizados',
   '/roles':                           'Roles',
+  '/tareas':                          'Tablero',
+  '/tareas/revisar':                  'Por revisar',
+  '/tareas/configurar':               'Configurar tablero',
   '/status':                          'Status',
+  '/registro':                        'Registro',
+  '/mensajes':                        'Mensajes',
   '/informes':                         'Reportes',
   '/notificaciones':                  'Notificaciones',
   '/activity':                        'Actividad',
@@ -193,6 +223,9 @@ function App() {
         <Route path="/embed/form/:embedId" element={<EmbedFormPage />} />
         {/* Sin sesion: la abre desde el correo quien no compro. */}
         <Route path="/feedback/:token" element={<FeedbackEncuestaPage />} />
+        {/* El enlace personal del colaborador (#202): sin usuario, el enlace es la llave.
+            Si la API no está montada (producción sin aprobar), dice que el enlace no vale. */}
+        <Route path="/factura-colaborador/:token" element={<FacturaEnlacePage />} />
 
         {/* Privadas (con layout) */}
         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
@@ -208,7 +241,7 @@ function App() {
           <Route path="/leads/seguimiento"
             element={PROCESO_EN_PRUEBAS ? <SeguimientoPage /> : <Navigate to="/leads" replace />} />
           <Route path="/leads/proceso" element={<ProcesoPage />} />
-          <Route path="/leads/convocatorias" element={SOLO_EN_PRUEBAS ? <ConvocatoriasPage /> : <Navigate to="/leads" replace />} />
+          <Route path="/leads/convocatorias" element={<ConvocatoriasPage />} />
           <Route path="/leads/:id" element={<LeadDetailPage />} />
           <Route path="/products" element={<ProductsPage />} />
           <Route path="/products/pending" element={<CoursesPendingPage />} />
@@ -233,6 +266,10 @@ function App() {
           <Route path="/accounting/facturas/nueva" element={<InvoiceCreatePage />} />
           <Route path="/accounting/facturas/configuracion" element={<InvoicingConfigPage />} />
           <Route path="/accounting/facturas/plantillas" element={<InvoiceTemplateEditorPage />} />
+          {/* Facturas de colaboradores (#202): en evaluación, solo en /staging y en local, como en MultiCRM. */}
+          <Route path="/accounting/facturas-colaboradores"
+            element={<FacturasColaboradoresPage />} />
+          <Route path="/mi-factura" element={<MiFacturaPage />} />
           <Route path="/revenue" element={<RevenuePage />} />
           <Route path="/clients" element={<ClientsPage />} />
           <Route path="/clients/:id" element={<ClientDetailPage />} />
@@ -248,8 +285,12 @@ function App() {
           {/* Conexión → MCP y Conectores, como en MultiCRM. Quién puede usar el MCP lo decide el servidor. */}
           <Route path="/conexion/mcp" element={<McpPage />} />
           <Route path="/conexion/conectores" element={<ConnectorsPage />} />
+          {/* Conexión → Webhook de transferencias. Solo super admin y admin: lo corta el servidor. */}
+          <Route path="/conexion/webhook-transferencias" element={<WebhookTransferenciasPage />} />
           {/* Certifex vive dentro de Matrículas (Diego, 30/09). */}
           <Route path="/matriculas/certificaciones" element={<MatriculasPage />} />
+          {/* Diplomas (#272): las solicitudes desde Moodle y los diplomas emitidos. */}
+          <Route path="/matriculas/diplomas" element={<MatriculasPage />} />
           <Route path="/certifex/consultas" element={<Navigate to="/matriculas/certificaciones?vista=consultas" replace />} />
           <Route path="/certifex/emisiones" element={<Navigate to="/matriculas/certificaciones" replace />} />
           <Route path="/forms" element={<FormsPage />} />
@@ -268,11 +309,10 @@ function App() {
           <Route path="/mis-cursos" element={<MisCursosPage />} />
           <Route path="/make-webhooks" element={<MakeWebhooksPage />} />
           <Route path="/make-webhooks/:id" element={<MakeWebhookDetailPage />} />
-          {/* Alias: el sidebar y deep-links viejos apuntan a /webhooks pero en
-             ISEIE solo existe el módulo de Make-webhooks. Redirigimos para
-             evitar 404. */}
-          <Route path="/webhooks" element={<Navigate to="/make-webhooks" replace />} />
-          <Route path="/webhooks/:id" element={<Navigate to="/make-webhooks" replace />} />
+          {/* Antes /webhooks redirigía a Make: dos entradas del menú para la
+              misma pantalla. Ahora es la suya, como en MultiCRM (#226). */}
+          <Route path="/webhooks" element={<WebhooksPage />} />
+          <Route path="/webhooks/:id" element={<WebhookDetailPage />} />
           <Route path="/woocommerce" element={<WooCommercePage />} />
           <Route path="/secuencias-email" element={<EmailSequencesPage />} />
           <Route path="/email-templates" element={<EmailTemplatesPage />} />
@@ -292,10 +332,17 @@ function App() {
           <Route path="/notifications" element={<Navigate to="/notificaciones" replace />} />
           <Route path="/activity" element={<ActivityPage />} />
           <Route path="/status" element={<StatusPage />} />
+          <Route path="/registro" element={<RegistroPage />} />
+          <Route path="/mensajes" element={<MessagesPage />} />
+          <Route path="/messages" element={<Navigate to="/mensajes" replace />} />
           <Route path="/solicitudes-cambio" element={<ChangeRequestsPage />} />
           <Route path="/solicitudes-cambio/:id" element={<ChangeRequestDetailPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/configuracion" element={<SettingsPage />} />
+          {/* Equipo de Desarrollo (#210): sin aprobar para producción, solo en /staging. */}
+          <Route path="/tareas" element={<TasksPage />} />
+          <Route path="/tareas/revisar" element={<TasksPage />} />
+          <Route path="/tareas/configurar" element={<TaskBoardConfigPage />} />
         </Route>
 
         {/* Entrada y catch-all */}
@@ -303,15 +350,17 @@ function App() {
         {/* Las direcciones de antes, en ingles, siguen funcionando: si no,
             se rompen los favoritos del equipo y los enlaces ya enviados. */}
         <Route path="/settings" element={<Navigate to="/configuracion" replace />} />
-        <Route path="/reports/ia" element={<Navigate to="/informes/ia" replace />} />
+        {/* Cada redirección lleva a una pantalla que existe AQUÍ (#226). Se
+            copiaron de MultiCRM y cuatro llevaban a «Página no encontrada»:
+            /informes/ia, /mensajes, /chat-ia y /configuracion/plantillas-email
+            no existen en ISEIE. Las dos sin pantalla equivalente se quitan. */}
+        <Route path="/reports/ia" element={<Navigate to="/informes" replace />} />
         <Route path="/reports" element={<Navigate to="/informes" replace />} />
         <Route path="/sales" element={<Navigate to="/ventas" replace />} />
         <Route path="/profile" element={<Navigate to="/perfil" replace />} />
         <Route path="/preferences" element={<Navigate to="/preferencias" replace />} />
-        <Route path="/messages" element={<Navigate to="/mensajes" replace />} />
         <Route path="/email-sequences" element={<Navigate to="/secuencias-email" replace />} />
-        <Route path="/ai-chat" element={<Navigate to="/chat-ia" replace />} />
-        <Route path="/configuracion/email-templates" element={<Navigate to="/configuracion/plantillas-email" replace />} />
+        <Route path="/configuracion/email-templates" element={<Navigate to="/email-templates" replace />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>

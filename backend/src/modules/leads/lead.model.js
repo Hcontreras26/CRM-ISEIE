@@ -1164,8 +1164,10 @@ export async function reassignPendingRoundRobin(projectId) {
     const gestorIds = gestores.map((g) => g.user_id);
 
     const { rows: pending } = await client.query(
+      // `deleted_at IS NULL` faltaba: sin el, esto repartia tambien las fichas
+      // borradas y las marcadas como spam (arreglo de MultiCRM 93bdf4a7).
       `SELECT id FROM leads
-       WHERE project_id = $1 AND responsable_id IS NULL
+       WHERE project_id = $1 AND responsable_id IS NULL AND deleted_at IS NULL
        ORDER BY created_at ASC`,
       [projectId]
     );
@@ -1251,10 +1253,16 @@ export async function getLeadProjectId(leadId) {
 // ============================================================
 
 // Panel "Hoy" - actividad del dia, reminders pendientes, alertas
-export async function getTodaySummary({ userId, role, projectId }) {
+export async function getTodaySummary({ userId, role, projectId, projectIds = null }) {
   // Usamos parametros para evitar SQL injection
   const userIdParam = role === 'gestor' ? userId : null;
-  const pidParam = projectId || null;
+  // Uno o varios campus en la MISMA consulta (#224). Con una empresa elegida
+  // el Dashboard pedia esto una vez por campus —siete con CEDIA, cada una con
+  // seis consultas seguidas— y sumaba en el navegador. Ahora es una sola
+  // peticion con la lista y la suma la hace Postgres.
+  const pidParam = Array.isArray(projectIds) && projectIds.length
+    ? projectIds.map(Number)
+    : (projectId ? [Number(projectId)] : null);
 
   const { rows: remRows } = await query(
     `SELECT lr.id, lr.lead_id, lr.fecha_recordatorio, lr.nota,
@@ -1265,7 +1273,7 @@ export async function getTodaySummary({ userId, role, projectId }) {
      WHERE lr.completado = false
        AND lr.fecha_recordatorio <= CURRENT_DATE
        AND ($1::int IS NULL OR lr.created_by = $1)
-       AND ($2::int IS NULL OR l.project_id = $2)
+       AND ($2::int[] IS NULL OR l.project_id = ANY($2::int[]))
      ORDER BY lr.fecha_recordatorio ASC, lr.id DESC
      LIMIT 20`,
     [userIdParam, pidParam]
@@ -1275,7 +1283,7 @@ export async function getTodaySummary({ userId, role, projectId }) {
     `SELECT COUNT(*) FROM leads l
      WHERE l.fecha_solicitud::date = CURRENT_DATE
        AND ($1::int IS NULL OR l.responsable_id = $1)
-       AND ($2::int IS NULL OR l.project_id = $2)`,
+       AND ($2::int[] IS NULL OR l.project_id = ANY($2::int[]))`,
     [userIdParam, pidParam]
   );
 
@@ -1283,7 +1291,7 @@ export async function getTodaySummary({ userId, role, projectId }) {
     `SELECT COUNT(*) FROM leads l
      WHERE l.fecha_solicitud >= CURRENT_DATE - INTERVAL '7 days'
        AND ($1::int IS NULL OR l.responsable_id = $1)
-       AND ($2::int IS NULL OR l.project_id = $2)`,
+       AND ($2::int[] IS NULL OR l.project_id = ANY($2::int[]))`,
     [userIdParam, pidParam]
   );
 
@@ -1294,7 +1302,7 @@ export async function getTodaySummary({ userId, role, projectId }) {
      WHERE l.status NOT IN ('convertido', 'no_interesado')
        AND EXTRACT(DAY FROM NOW() - GREATEST(l.updated_at, COALESCE((SELECT MAX(fecha) FROM lead_interactions WHERE lead_id = l.id), l.created_at))) > p.dias_alerta_inactividad
        AND ($1::int IS NULL OR l.responsable_id = $1)
-       AND ($2::int IS NULL OR l.project_id = $2)`,
+       AND ($2::int[] IS NULL OR l.project_id = ANY($2::int[]))`,
     [userIdParam, pidParam]
   );
 
@@ -1306,7 +1314,7 @@ export async function getTodaySummary({ userId, role, projectId }) {
        AND c.fecha_compromiso_pago IS NOT NULL
        AND c.fecha_compromiso_pago < CURRENT_DATE
        AND ($1::int IS NULL OR l.responsable_id = $1)
-       AND ($2::int IS NULL OR c.project_id = $2)`,
+       AND ($2::int[] IS NULL OR c.project_id = ANY($2::int[]))`,
     [userIdParam, pidParam]
   );
 
@@ -1317,7 +1325,7 @@ export async function getTodaySummary({ userId, role, projectId }) {
      LEFT JOIN leads l ON l.id = c.lead_id
      WHERE cp.fecha = CURRENT_DATE
        AND ($1::int IS NULL OR l.responsable_id = $1)
-       AND ($2::int IS NULL OR c.project_id = $2)`,
+       AND ($2::int[] IS NULL OR c.project_id = ANY($2::int[]))`,
     [userIdParam, pidParam]
   );
 
@@ -1334,7 +1342,9 @@ export async function getTodaySummary({ userId, role, projectId }) {
 export async function getStats(projectId, { responsableId = null, dateFrom = null, dateTo = null, productId = null, canal = null, search = null } = {}) {
   // Los chips de stats deben reflejar los mismos filtros que el listado, no el
   // total global del proyecto. WHERE incremental igual que findAll.
-  const params = [projectId];
+  // `projectId` puede ser una LISTA de campus (#224): el Dashboard con una
+  // empresa pide todos de una vez en vez de uno por uno.
+  const params = [Array.isArray(projectId) ? projectId.map(Number) : [Number(projectId)]];
   let idx = 2;
   const extra = [];
   if (responsableId) { extra.push(`responsable_id = $${idx++}`); params.push(responsableId); }
@@ -1370,7 +1380,7 @@ export async function getStats(projectId, { responsableId = null, dateFrom = nul
        COUNT(*) FILTER (WHERE status = 'no_interesado') as no_interesados,
        COUNT(*) FILTER (WHERE status = 'proxima_convocatoria') as proxima_convocatoria,
        COUNT(*) FILTER (WHERE responsable_id IS NULL AND status NOT IN ('convertido','no_interesado')) as sin_asignar
-     FROM leads WHERE project_id = $1 AND deleted_at IS NULL${where}`,
+     FROM leads WHERE project_id = ANY($1::int[]) AND deleted_at IS NULL${where}`,
     params
   );
   return rows[0];

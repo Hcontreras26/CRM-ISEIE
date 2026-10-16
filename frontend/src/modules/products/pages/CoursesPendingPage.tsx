@@ -47,14 +47,10 @@ export default function CoursesPendingPage() {
     setLoading(true);
     setError(null);
     try {
-      // Endpoint dedicado (CRM-141 backend) cuando exista
-      let res;
-      try {
-        res = await client.get(`/products/${activeProject.id}?estado_creacion=pendiente_crear`);
-      } catch {
-        // Fallback: traer todos y filtrar en cliente
-        res = await client.get(`/products/${activeProject.id}`);
-      }
+      // La lista es /products?projectId=…; `/products/:id` es UN producto por su id,
+      // así que pedir `/products/${proyecto}` traía un producto cualquiera (o nada).
+      // Arreglado igual que en MultiCRM (116757f4). Se filtra aquí.
+      const res = await client.get('/products', { params: { projectId: activeProject.id } });
       if (res.success) {
         const all = res.data || [];
         // Si el backend no devuelve estado_creacion, hacemos fallback heurístico:

@@ -9,23 +9,34 @@ import {
   ChatText,
   Receipt, Coins, Wrench, ShoppingBag, ChatCircleText, Wallet, Bank, Clock, GitMerge, CopySimple,
   UsersThree, CloudArrowDown,
-  GraduationCap, Warning } from '@phosphor-icons/react';
+  GraduationCap, Warning, Certificate, ClipboardText, ChatsCircle, Kanban, CheckSquare, SlidersHorizontal } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { rolesDe } from '@/shared/lib/roles';
+import usePermission from '@/shared/hooks/usePermission';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/shared/lib/utils';
 import client from '@/shared/api/client';
 import NotificationsBell from './NotificationsBell';
 import { isBetaAllowed, BETA_MODE } from '@/shared/config/betaConfig';
-import { PROCESO_EN_PRUEBAS, SOLO_EN_PRUEBAS } from '@/shared/lib/enPruebas';
+import { PROCESO_EN_PRUEBAS } from '@/shared/lib/enPruebas';
+import { CERTIFEX_PANEL } from '@/shared/lib/certifexPanel';
 
-const ROLE_LABELS = { superadmin: 'Superadmin', admin: 'Admin', gestor: 'Gestor', soporte: 'Soporte', tutor: 'Tutor' };
+const ROLE_LABELS = { superadmin: 'Superadmin', admin: 'Admin', gestor: 'Gestor', soporte: 'Soporte', tutor: 'Tutor', colaborador: 'Colaborador' };
+
+// Quién tiene tablero de tareas: el mismo `ROLES_TAREAS` que el backend (#210).
+const ROLES_TAREAS = ['superadmin', 'admin', 'colaborador'];
 
 // NAV_SECTIONS: agrupaciones del sidebar. Las "secciones" (Prospectos,
 // Captación, Productos, Contabilidad) son ahora una sola entrada en el
 // sidebar que navega al primer hijo; los hijos viven como tabs horizontales
 // dentro de la página (ver shared/lib/sections.js + SectionTabs.jsx).
-const NAV_SECTIONS = [
+//
+// Ninguna entrada puede llevar a «Página no encontrada» (#226). Diego, 10/10:
+// «Las entradas del menú que NO existen en ISEIE se marcan "Próximamente" (sin
+// enlace). Las que SÍ existen en algún CRM se hacen funcionar donde falten».
+// Lo vigila `__smoke__/menuSinRutasRotas.test.jsx`: cada `to` tiene su <Route> en
+// App.jsx, o lleva `comingSoon: true`.
+export const NAV_SECTIONS = [
   {
     label: 'Principal',
     items: [
@@ -45,7 +56,7 @@ const NAV_SECTIONS = [
           { to: '/leads/proceso', label: 'Proceso comercial' },
           // Las becas y su embudo (#86): a quién se le ofrecieron y en qué acabaron.
           // Sin aprobar para producción (07/10): solo en /staging.
-          ...(SOLO_EN_PRUEBAS ? [{ to: '/leads/convocatorias', label: 'Convocatorias' }] : []),
+          { to: '/leads/convocatorias', label: 'Convocatorias' },
         ],
       },
       // WhatsApp cuelga de su propia entrada, con lo suyo escalonado debajo: son
@@ -77,15 +88,36 @@ const NAV_SECTIONS = [
       { to: '/ventas',      label: 'Ventas',     icon: Receipt },
     ],
   },
+  // El tablero del equipo (#210, como en MultiCRM). Es lo único que ve quien es
+  // solo colaborador. «Por revisar» y «Configurar tablero» se enseñan por
+  // permiso (`permiso`), no por rol: lo que se cambie en Configuración › Roles
+  // manda también aquí. Aprobada para producción en la 2.2.0 (Diego, 16/10).
+  {
+    label: 'Equipo de Desarrollo',
+    items: [
+      { to: '/tareas', label: 'Tablero', icon: Kanban, roles: ROLES_TAREAS, end: true },
+      { to: '/tareas/revisar', label: 'Por revisar', icon: CheckSquare, roles: ROLES_TAREAS, permiso: 'tasks.close' },
+      { to: '/tareas/configurar', label: 'Configurar tablero', icon: SlidersHorizontal, roles: ROLES_TAREAS, permiso: 'tasks.manage' },
+      // «Mi factura» (#202): el colaborador con usuario sube aquí su factura del mes.
+      // Aquí, junto a su tablero, como en MultiCRM: es lo otro que ve un colaborador.
+      { to: '/mi-factura', label: 'Mi factura', icon: Receipt, roles: ['colaborador'] },
+    ],
+  },
   {
     label: 'Captación',
     items: [
       { to: '/secuencias-email', label: 'Email',     icon: Envelope, roles: ['admin', 'superadmin'], sectionPrefixes: ['/secuencias-email', '/email-templates'] },
       { to: '/forms',           label: 'Formularios', icon: Globe,  roles: ['admin', 'superadmin'], sectionPrefixes: ['/forms'] },
       { to: '/make-webhooks',   label: 'Make',      icon: PlugsConnected, roles: ['admin', 'superadmin'] },
+      // Llevaba a la pantalla de Make (una redirección): dos entradas para lo
+      // mismo. Desde el #226 es la de Webhooks, traída de MultiCRM.
       { to: '/webhooks',        label: 'Webhooks',  icon: PlugsConnected, roles: ['admin', 'superadmin'] },
       { to: '/captacion/whatsapp', label: 'Widget web', icon: WhatsappLogo, roles: ['admin', 'superadmin', 'soporte'] },
-      { to: '/campaigns',       label: 'Campañas',  icon: Megaphone, roles: ['admin', 'superadmin'], sectionPrefixes: ['/campaigns'] },
+      // Próximamente (#226): no hay pantalla en ISEIE. La de MultiCRM enseña
+      // datos INVENTADOS —sus llamadas a Meta y Google van con `USE_MOCKS =
+      // true`— y traer cifras falsas a un CRM con dinero real es peor que no
+      // tenerla. Vuelve cuando haya datos de verdad detrás.
+      { to: '/campaigns',       label: 'Campañas',  icon: Megaphone, roles: ['admin', 'superadmin'], comingSoon: true },
       { to: '/seo',             label: 'Tráfico orgánico', icon: MagnifyingGlass, roles: ['admin', 'superadmin'] },
     ],
   },
@@ -120,7 +152,10 @@ const NAV_SECTIONS = [
   {
     label: 'Finanzas',
     items: [
-      { to: '/ventas',                label: 'Dashboard',          icon: Calculator, roles: ['admin', 'superadmin'], statusTag: 'Pruebas' },
+      // El dashboard de finanzas, el mismo que MultiCRM abre en /finanzas. Llevaba
+      // a /ventas, igual que la entrada de debajo: dos entradas para una sola
+      // pantalla (#234). `end` para que no se encienda en /accounting/income.
+      { to: '/accounting',            label: 'Dashboard',          icon: Calculator, roles: ['admin', 'superadmin'], statusTag: 'Pruebas', end: true },
       { to: '/ventas',                label: 'Ventas',             icon: Receipt, statusTag: 'Pruebas' },
       { to: '/accounting/income',    label: 'Ingresos',           icon: Coins,      roles: ['admin', 'superadmin'], statusTag: 'Pruebas' },
       { to: '/revenue',              label: 'Conversiones',       icon: ChartLineUp, roles: ['admin', 'superadmin'], statusTag: 'Pruebas' },
@@ -132,6 +167,8 @@ const NAV_SECTIONS = [
       { to: '/accounting/pendiente-facturar', label: 'Pendientes de facturar', icon: WarningCircle, roles: ['admin', 'superadmin'], statusTag: 'Pruebas' },
       { to: '/accounting/pagos-stripe', label: 'Pagos Stripe',    icon: PlugsConnected, roles: ['admin', 'superadmin'] },
       { to: '/accounting/facturas', label: 'Facturación', icon: FilePdf, roles: ['admin', 'superadmin', 'soporte', 'gestor'], permiso: 'factura_manager', sectionPrefixes: ['/accounting/facturas'] },
+      // Facturas de colaboradores (#202): en evaluación, solo en /staging y en local.
+      { to: '/accounting/facturas-colaboradores', label: 'Facturas de colaboradores', icon: Receipt, roles: ['admin', 'superadmin'] },
       { to: '/accounting/integrations', label: 'Integraciones',   icon: PlugsConnected, roles: ['admin', 'superadmin'], statusTag: 'Pruebas' },
     ],
   },
@@ -141,7 +178,10 @@ const NAV_SECTIONS = [
       { to: '/informes',     label: 'Reportes',      icon: ChartLineUp, sectionPrefixes: ['/informes', '/activity'] },
       // Por que no compran (#170). Fuera de produccion hasta aprobarlo.
       ...(PROCESO_EN_PRUEBAS ? [{ to: '/informes/feedback', label: 'Feedback', icon: ChatCircleText, roles: ['admin', 'superadmin'] }] : []),
-      { to: '/chat-ia',     label: 'Chat IA',       icon: ChatCircleText, roles: ['admin', 'superadmin'] },
+      // Próximamente (#226): en MultiCRM la pantalla existe pero está aparcada
+      // —fuera de su menú hasta la fase 5— y depende de la API de Claude, cuya
+      // clave y cuyo módulo (`claude-chat`) ISEIE no tiene.
+      { to: '/chat-ia',     label: 'Chat IA',       icon: ChatCircleText, roles: ['admin', 'superadmin'], comingSoon: true },
     ],
   },
   {
@@ -152,6 +192,10 @@ const NAV_SECTIONS = [
       { to: '/leads/revision-duplicados', label: 'Revisión duplicados', icon: GitMerge, roles: ['admin', 'superadmin'] },
       { to: '/leads/duplicados', label: 'Buscar duplicados', icon: CopySimple, roles: ['admin', 'superadmin'] },
       { to: '/matriculas', label: 'Matrículas', icon: UserCheck },
+      // Diplomas de Certifex (#272): lo que piden los alumnos desde Moodle, aprobarlo,
+      // enviarlo y revocarlo. Solo administración, como en MultiCRM. Se enciende por
+      // configuración, como Certificaciones (VITE_CERTIFEX_PANEL).
+      ...(CERTIFEX_PANEL ? [{ to: '/matriculas/diplomas', label: 'Diplomas', icon: Certificate, roles: ['superadmin', 'admin'] }] : []),
     ],
   },
   {
@@ -164,6 +208,9 @@ const NAV_SECTIONS = [
     items: [
       { to: '/conexion/mcp', label: 'MCP', icon: Robot, accesoMcp: true },
       { to: '/conexion/conectores', label: 'Conectores', icon: CloudArrowDown, roles: ['admin', 'superadmin'] },
+      // Diego, 15/10: «un apartado en Conexión para enviar esos datos ÚNICAMENTE
+      // CUANDO SE PONGA DATOS POR TRANSFERENCIA BANCARIA / DEPÓSITO BANCARIO».
+      { to: '/conexion/webhook-transferencias', label: 'Webhook de transferencias', icon: Bank, roles: ['admin', 'superadmin'] },
     ],
   },
   {
@@ -172,13 +219,18 @@ const NAV_SECTIONS = [
       // Lo que trae cada versión (Diego, 28/09). La 2.0.0 cuenta lo que aún está
       // en pruebas: sale con ello.
       ...(PROCESO_EN_PRUEBAS ? [{ to: '/novedades', label: 'Novedades', icon: Sparkle, roles: ['superadmin', 'admin', 'gestor', 'soporte'] }] : []),
+      // El chat interno del equipo, como en MultiCRM.
+      { to: '/mensajes', label: 'Mensajes', icon: ChatsCircle },
       { to: '/solicitudes-cambio', label: 'Solicitudes de cambio', icon: GitMerge },
       { to: '/notificaciones', label: 'Notificaciones',   icon: Bell },
       // El tutor entra aqui: es donde cambia su contraseña.
-      { to: '/preferencias',    label: 'Mis preferencias', icon: Sliders, roles: ['superadmin', 'admin', 'gestor', 'tutor'] },
+      { to: '/preferencias',    label: 'Mis preferencias', icon: Sliders, roles: ['superadmin', 'admin', 'gestor', 'tutor', 'colaborador'] },
       { to: '/soporte',        label: 'Soporte',          icon: Headset },
       { to: '/manual',         label: 'Manual del CRM',   icon: BookOpen },
       { to: '/status',         label: 'Status',           icon: Pulse },
+      // El registro (#111), como en MultiCRM: quién hizo qué y, en «todos», los sucesos
+      // del sistema. Los mismos roles que exige el servidor.
+      { to: '/registro',       label: 'Registro',         icon: ClipboardText, roles: ['superadmin', 'admin'] },
     ],
   },
 ];
@@ -199,7 +251,7 @@ const APAGADOS = String(import.meta.env.VITE_MODULOS_APAGADOS || '')
 // PRINCIPAL, como el servidor: un rol añadido no da el MCP.
 export function tieneAccesoMcp(role, permisos) {
   if (role === 'superadmin' || role === 'admin') return true;
-  if (role === 'tutor') return false;
+  if (role === 'tutor' || role === 'colaborador') return false;
   return permisos?.usa_mcp === true;
 }
 
@@ -216,6 +268,11 @@ function canSeeItem(item, role, soloColaboraciones, permisos) {
   // El recorte del tutor es para quien es SOLO tutor.
   if (roles.length === 1 && roles[0] === 'tutor') {
     return Array.isArray(item.roles) && item.roles.includes('tutor');
+  }
+  // Lo mismo para quien es SOLO colaborador (#210, fase 5): Tareas y sus
+  // preferencias. El servidor le responde 403 en todo lo demas.
+  if (roles.length > 0 && roles.every((r) => r === 'colaborador')) {
+    return Array.isArray(item.roles) && item.roles.includes('colaborador');
   }
   // Un gestor de colaboraciones se dedica SOLO a los tutores: no lleva
   // prospectos, ni ventas, ni finanzas. Se declara lo que puede ver, igual que
@@ -250,25 +307,43 @@ function canSeeItem(item, role, soloColaboraciones, permisos) {
   return item.roles.some((r) => roles.includes(r));
 }
 
-function NavItem({ to, label, icon: Icon, end, comingSoon, statusTag, collapsed, onClick, sectionPrefixes }) {
+/**
+ * Una entrada del menú que todavía no lleva a ninguna parte (#226).
+ *
+ * Diego, 10/10: «Las entradas del menú que NO existen en ISEIE se marcan
+ * "Próximamente" (sin enlace)». Es un <div> y no un enlace: no navega, el
+ * tabulador no se para en ella y no hay forma de acabar en «Página no
+ * encontrada». La etiqueta dice siempre «Próximamente» —antes unas ponían
+ * «Próx.» y otras «Pruebas», y «Pruebas» es otra cosa: esa SÍ se abre—.
+ *
+ * El mismo aspecto que en MultiCRM: entrada atenuada y la etiqueta a la derecha.
+ */
+export function EntradaProximamente({ label, icon: Icon, collapsed = false }) {
+  return (
+    <div
+      aria-disabled="true"
+      data-proximamente=""
+      title={`${label} — Próximamente`}
+      className={cn(
+        'relative flex items-center rounded-md text-[13px] text-muted-foreground/45 cursor-not-allowed select-none',
+        collapsed ? 'justify-center h-10' : 'gap-3 px-3 py-1.5'
+      )}
+    >
+      {Icon && <Icon size={18} weight="regular" />}
+      {!collapsed && <span className="truncate">{label}</span>}
+      {!collapsed && (
+        <span className="ml-auto text-[9px] uppercase tracking-wider bg-muted/60 text-muted-foreground/70 px-1.5 py-0.5 rounded">
+          Próximamente
+        </span>
+      )}
+    </div>
+  );
+}
+
+// Exportada para la prueba del menú (#226): una entrada marcada no puede ser un enlace.
+export function NavItem({ to, label, icon: Icon, end, comingSoon, collapsed, onClick, sectionPrefixes }) {
   const location = useLocation();
-  if (comingSoon) {
-    const tag = statusTag || 'Próx.';
-    const title = statusTag ? `${label} — ${statusTag}` : `${label} — Próximamente`;
-    return (
-      <div
-        title={title}
-        className={cn(
-          'relative flex items-center rounded-md text-[13px] text-muted-foreground/45 cursor-not-allowed select-none',
-          collapsed ? 'justify-center h-10' : 'gap-3 px-3 py-1.5'
-        )}
-      >
-        <Icon size={18} weight="regular" />
-        {!collapsed && <span className="truncate">{label}</span>}
-        {!collapsed && <span className="ml-auto text-[9px] uppercase tracking-wider bg-muted/60 text-muted-foreground/70 px-1.5 py-0.5 rounded">{tag}</span>}
-      </div>
-    );
-  }
+  if (comingSoon) return <EntradaProximamente label={label} icon={Icon} collapsed={collapsed} />;
 
   // Para items con `sectionPrefixes`, NavLink no detecta como activo cuando
   // el usuario está en una ruta hermana (ej. /leads/pipeline cuando to=/leads).
@@ -541,6 +616,16 @@ export default function Sidebar({ collapsed = false, onToggleCollapsed, onNaviga
 
   // Todos sus roles, no solo el principal: el menu suma lo de cada uno.
   const role = rolesDe(user).length ? rolesDe(user) : ['gestor'];
+  // Las entradas de Tareas con `permiso` se enseñan por la clave (`can`), que es
+  // lo que se cambia en Configuración › Roles, como en MultiCRM. Resuelto aquí,
+  // `canSeeItem` ya no mira esa clave en el usuario.
+  const { can } = usePermission();
+  const secciones = NAV_SECTIONS.map((sec) => ({
+    ...sec,
+    items: sec.items
+      .filter((it) => !it.permiso?.startsWith('tasks.') || can(it.permiso))
+      .map((it) => (it.permiso?.startsWith('tasks.') ? { ...it, permiso: undefined } : it)),
+  }));
   const initials = user?.nombre?.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2) || '??';
   // Quien lleva las colaboraciones no es una gestora: se la llama por su trabajo,
   // que es dar de alta profesores y ajustarles el porcentaje.
@@ -612,7 +697,7 @@ export default function Sidebar({ collapsed = false, onToggleCollapsed, onNaviga
           (más "Principal" siempre como ancla). El usuario puede plegar/expandir
           libremente con click en el header de sección. */}
       <CollapsibleNav
-        sections={NAV_SECTIONS}
+        sections={secciones}
         role={role}
         soloColab={user?.gestor_colaboraciones === true
           && !['superadmin', 'admin', 'soporte'].includes(role)}

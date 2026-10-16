@@ -270,7 +270,7 @@ export default function LeadsPipelinePage() {
       let productoInteresId: number | null = null;
       if (data.producto_interes) {
         try {
-          const pr = await client.get<Array<{ id: number; nombre: string }>>(`/products/${pid}`);
+          const pr = await client.get<Array<{ id: number; nombre: string }>>('/products', { params: { projectId: pid } });
           const list = pr.success ? (pr.data || []) : [];
           const prod = list.find(p => p.nombre === data.producto_interes);
           productoInteresId = prod?.id || null;
