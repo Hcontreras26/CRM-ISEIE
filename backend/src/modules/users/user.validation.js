@@ -117,3 +117,13 @@ export const listUsersSchema = z.object({
   // La pantalla de Usuarios los pide expresamente; el resto de listas no.
   incluirTodos: z.enum(['true', 'false']).optional().transform((v) => v === 'true'),
 });
+
+// El registro de «Actividad». Un `userId` que no es número era un 500 de
+// Postgres; ahora es un 400.
+export const activityLogSchema = z.object({
+  userId: z.coerce.number().int().positive().optional(),
+  action: z.string().trim().max(100).optional(),
+  search: z.string().trim().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(500).default(100),
+  offset: z.coerce.number().int().min(0).default(0),
+});
