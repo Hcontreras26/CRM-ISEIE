@@ -74,6 +74,10 @@ import { startResumenDiarioScheduler } from './jobs/resumenDiarioScheduler.js';
 import { startReporteSemanalScheduler } from './jobs/reporteSemanalScheduler.js';
 import { startMcpRotacionScheduler } from './jobs/mcpRotacionScheduler.js';
 import { startMcpVigilanciaScheduler } from './jobs/mcpVigilanciaScheduler.js';
+// Tablero de tareas del equipo (#210, paridad con MultiCRM): solo en pruebas.
+import tasksModule from './modules/tasks/index.js';
+import { startTasksDailySummaryScheduler } from './jobs/tasksDailySummaryJob.js';
+import { tareasActivas } from './shared/config/soloEnPruebas.js';
 
 const app = express();
 const PORT = process.env.PORT || 3005;
@@ -271,7 +275,10 @@ const MODULES = [
   certifexModule,
   // Conexion de Claude por MCP: solo consulta, con token personal (como MultiCRM).
   mcpModule,
+  // El tablero aún no está aprobado para producción: solo en local y /staging.
+  ...(tareasActivas() ? [tasksModule] : []),
 ];
+if (!tareasActivas()) logger.info('Modulo SKIP (solo en pruebas): /api/tasks');
 
 for (const mod of MODULES) {
   app.use(mod.prefix, mod.router);
@@ -378,6 +385,14 @@ if (process.env.NODE_ENV !== 'test') {
       startWebhooksSalientesScheduler();
     } catch (err) {
       logger.error({ err }, 'Webhook de transferencias: los reintentos fallaron al arrancar');
+    }
+    // El correo de cada mañana del tablero (se apaga con TAREAS_DIARIO_DISABLED=1).
+    if (tareasActivas()) {
+      try {
+        startTasksDailySummaryScheduler();
+      } catch (err) {
+        logger.error({ err }, 'Tareas: el correo de cada mañana falló al arrancar');
+      }
     }
   });
 }
