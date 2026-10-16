@@ -24,6 +24,11 @@ import accountingModule from './modules/accounting/index.js';
 import integrationsModule from './modules/integrations/index.js';
 import stripePaymentsModule from './modules/stripe-payments/index.js';
 import invoicesModule from './modules/invoices/index.js';
+// Facturas de colaboradores (#202, como en MultiCRM): solo en pruebas hasta que
+// Diego lo apruebe con FACTURAS_COLABORADOR_EN_PRODUCCION=1.
+import facturasColaboradorModule from './modules/facturas-colaborador/index.js';
+import { startFacturasColaboradorScheduler } from './jobs/facturasColaboradorJob.js';
+import { facturasColaboradorActivas } from './shared/config/soloEnPruebas.js';
 import widgetModule from './modules/widget/index.js';
 import expensesModule from './modules/expenses/index.js';
 import accountsPayableModule from './modules/accounts-payable/index.js';
@@ -238,6 +243,9 @@ const MODULES = [
   integrationsModule,
   stripePaymentsModule,
   invoicesModule,
+  // Facturas de colaboradores (#202): la lista, el enlace del mes y «Mi factura».
+  // Solo en pruebas también en el servidor: en producción ni la API ni la tarea del mes.
+  ...(facturasColaboradorActivas() ? [facturasColaboradorModule] : []),
   widgetModule,
   expensesModule,
   accountsPayableModule,
@@ -272,6 +280,8 @@ const MODULES = [
   // Conexion de Claude por MCP: solo consulta, con token personal (como MultiCRM).
   mcpModule,
 ];
+
+if (!facturasColaboradorActivas()) logger.info('Modulo SKIP (solo en pruebas): /api/facturas-colaborador');
 
 for (const mod of MODULES) {
   app.use(mod.prefix, mod.router);
@@ -371,6 +381,14 @@ if (process.env.NODE_ENV !== 'test') {
         startMcpVigilanciaScheduler();   // alertas de uso raro
       } catch (err) {
         logger.error({ err }, 'MCP: la vigilancia de alertas falló al arrancar');
+      }
+    }
+    // Facturas de colaboradores (#202): el correo del mes y el recordatorio del día 5.
+    if (facturasColaboradorActivas()) {
+      try {
+        startFacturasColaboradorScheduler();
+      } catch (err) {
+        logger.error({ err }, 'Facturas de colaboradores: la tarea del mes falló al arrancar');
       }
     }
     // Los reintentos del webhook de transferencias (se apaga con WEBHOOKS_SALIENTES_DISABLED=1).

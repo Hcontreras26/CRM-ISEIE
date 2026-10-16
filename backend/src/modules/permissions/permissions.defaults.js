@@ -19,6 +19,8 @@ export const SYSTEM_ROLE_DEFAULTS = {
     'accounting.view': true, 'accounting.create': true, 'accounting.edit': true, 'accounting.delete': true,
     'accounts_payable.view': true, 'accounts_payable.create': true, 'accounts_payable.edit': true, 'accounts_payable.delete': true,
     'payroll.view': true, 'payroll.create': true, 'payroll.edit': true, 'payroll.delete': true,
+    // Facturas de colaboradores (#202): las de las empresas de sus campus. «Marcar pagada», solo un admin.
+    'facturas_colaborador.ver_todas': true, 'facturas_colaborador.gestionar': true, 'facturas_colaborador.anular': true, 'facturas_colaborador.pagar': true, 'facturas_colaborador.subir': false,
     'reports.view': true, 'reports.export': true,
     'ia.view': true,
     'woocommerce.view': true, 'woocommerce.sync': true,
@@ -52,6 +54,8 @@ export const SYSTEM_ROLE_DEFAULTS = {
     'accounting.view': false, 'accounting.create': false, 'accounting.edit': false, 'accounting.delete': false,
     'accounts_payable.view': false, 'accounts_payable.create': false, 'accounts_payable.edit': false, 'accounts_payable.delete': false,
     'payroll.view': false, 'payroll.create': true, 'payroll.edit': false, 'payroll.delete': false,
+    // Facturas de colaboradores (#202): no las ve.
+    'facturas_colaborador.ver_todas': false, 'facturas_colaborador.gestionar': false, 'facturas_colaborador.anular': false, 'facturas_colaborador.pagar': false, 'facturas_colaborador.subir': false,
     'reports.view': false, 'reports.export': false,
     'ia.view': false,
     'woocommerce.view': false, 'woocommerce.sync': false,
@@ -77,6 +81,8 @@ export const SYSTEM_ROLE_DEFAULTS = {
     'accounting.view': false, 'accounting.create': false, 'accounting.edit': false, 'accounting.delete': false,
     'accounts_payable.view': false, 'accounts_payable.create': false, 'accounts_payable.edit': false, 'accounts_payable.delete': false,
     'payroll.view': false, 'payroll.create': false, 'payroll.edit': false, 'payroll.delete': false,
+    // Facturas de colaboradores (#202): no las ve.
+    'facturas_colaborador.ver_todas': false, 'facturas_colaborador.gestionar': false, 'facturas_colaborador.anular': false, 'facturas_colaborador.pagar': false, 'facturas_colaborador.subir': false,
     'reports.view': true, 'reports.export': false,
     'ia.view': true,
     'woocommerce.view': false, 'woocommerce.sync': false,
@@ -88,6 +94,13 @@ export const SYSTEM_ROLE_DEFAULTS = {
     'field_defs.view': false, 'field_defs.edit': false,
     'channels.view': true, 'channels.edit': false,
     'roles.view': false, 'roles.edit': false,
+  },
+
+  // Colaborador (rol de MultiCRM #210, fase 5; aquí la 220 lo añade al ENUM): de las
+  // facturas de colaboradores (#202) solo sube la suya («Mi factura»). Lo que no
+  // está aquí es «no»: `resolvePermission` solo da por bueno un `true` explícito.
+  colaborador: {
+    'facturas_colaborador.ver_todas': false, 'facturas_colaborador.gestionar': false, 'facturas_colaborador.anular': false, 'facturas_colaborador.pagar': false, 'facturas_colaborador.subir': true,
   },
 };
 
@@ -102,6 +115,7 @@ export const ALL_RESOURCES = {
   accounting:       ['view', 'create', 'edit', 'delete'],
   accounts_payable: ['view', 'create', 'edit', 'delete'],
   payroll:          ['view', 'create', 'edit', 'delete'],
+  facturas_colaborador: ['ver_todas', 'gestionar', 'anular', 'pagar', 'subir'],
   reports:          ['view', 'export'],
   ia:               ['view'],
   woocommerce:      ['view', 'sync'],
