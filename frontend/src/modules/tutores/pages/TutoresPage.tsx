@@ -8,6 +8,9 @@ import PageHeader from '@/shared/components/ui/PageHeader';
 import EmptyState from '@/shared/components/ui/EmptyState';
 import { Button } from '@/shared/components/ui/button';
 import BuscadorCurso from '../components/BuscadorCurso';
+import Field from '@/shared/components/ui/Field';
+import FilaCampos from '@/shared/components/ui/FilaCampos';
+import { inputClass } from '@/shared/lib/ui';
 import Entregables from '../components/Entregables';
 import CampoCobraDesde from '../components/CampoCobraDesde';
 import { tutoresApi, type Tutor, type Colaboracion, type AjustesTutores } from '../api/tutores.api';
@@ -437,7 +440,7 @@ export default function TutoresPage() {
       setContrasena('');
       cargar();
     } catch (err) {
-      toast({ title: 'No se ha podido dar de alta', description: err instanceof Error ? err.message : '', variant: 'destructive' });
+      toast({ title: 'No se ha podido dar de alta', description: err instanceof Error && err.message ? err.message : 'Inténtalo de nuevo en un momento.', variant: 'destructive' });
     } finally { setGuardando(false); }
   }
 
@@ -459,7 +462,7 @@ export default function TutoresPage() {
       cargarColabs(elegido);
       cargar();
     } catch (err) {
-      toast({ title: 'No se ha podido añadir', description: err instanceof Error ? err.message : '', variant: 'destructive' });
+      toast({ title: 'No se ha podido añadir', description: err instanceof Error && err.message ? err.message : 'Inténtalo de nuevo en un momento.', variant: 'destructive' });
     } finally { setGuardando(false); }
   }
 
@@ -787,48 +790,34 @@ export default function TutoresPage() {
 
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
               <section className="space-y-3">
-                <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Quién es</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <label className="mb-1.5 block px-1 text-secundario font-medium sm:col-span-2">
-                    Nombre y apellidos <span className="text-red-500">*</span>
-                    <input name="nombre" required autoFocus
-                      className="mt-1 w-full h-9 px-3 rounded-md border border-border bg-background text-sm font-normal" />
-                  </label>
-                  <label className="mb-1.5 block px-1 text-secundario font-medium sm:col-span-2">
-                    Correo <span className="text-red-500">*</span>
-                    <input name="email" type="email" required
-                      className="mt-1 w-full h-9 px-3 rounded-md border border-border bg-background text-sm font-normal" />
-                    <span className="block text-[11px] text-muted-foreground font-normal mt-1">
-                      Es con lo que entra al CRM.
-                    </span>
-                  </label>
-                  <label className="mb-1.5 block px-1 text-secundario font-medium">
-                    DNI / NIF
-                    <input name="dniNif"
-                      className="mt-1 w-full h-9 px-3 rounded-md border border-border bg-background text-sm font-normal" />
-                  </label>
-                  <label className="mb-1.5 block px-1 text-secundario font-medium">
-                    Teléfono
-                    <input name="telefono"
-                      className="mt-1 w-full h-9 px-3 rounded-md border border-border bg-background text-sm font-normal" />
-                  </label>
-                  <label className="mb-1.5 block px-1 text-secundario font-medium sm:col-span-2">
-                    IBAN
-                    <input name="iban" placeholder="ES00 0000 0000 0000 0000 0000"
-                      className="mt-1 w-full h-9 px-3 rounded-md border border-border bg-background text-sm font-normal tabular-nums" />
-                    <span className="block text-[11px] text-muted-foreground font-normal mt-1">
-                      Donde se le paga. Puedes dejarlo para más adelante.
-                    </span>
-                  </label>
-                </div>
+                <h3 className="text-tabla uppercase text-muted-foreground">Quién es</h3>
+                <FilaCampos>
+                  <Field label="Nombre y apellidos" required htmlFor="alta-nombre" className="sm:col-span-2">
+                    <input id="alta-nombre" name="nombre" required autoFocus className={inputClass} />
+                  </Field>
+                  <Field label="Correo" required htmlFor="alta-email" className="sm:col-span-2" hint="Es con lo que entra al CRM.">
+                    <input id="alta-email" name="email" type="email" required className={inputClass} />
+                  </Field>
+                  <Field label="DNI / NIF" htmlFor="alta-dni">
+                    <input id="alta-dni" name="dniNif" className={inputClass} />
+                  </Field>
+                  <Field label="Teléfono" htmlFor="alta-tel">
+                    <input id="alta-tel" name="telefono" className={inputClass} />
+                  </Field>
+                  <Field label="IBAN" htmlFor="alta-iban" className="sm:col-span-2" hint="Donde se le paga. Puedes dejarlo para más adelante.">
+                    <input id="alta-iban" name="iban" placeholder="ES00 0000 0000 0000 0000 0000"
+                      className={`${inputClass} tabular-nums`} />
+                  </Field>
+                </FilaCampos>
               </section>
 
               <section className="space-y-2 border-t border-border pt-4">
-                <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Cómo entra</h3>
+                <h3 className="text-tabla uppercase text-muted-foreground">Cómo entra</h3>
                 <div className="flex gap-2">
                   <input value={contrasena} onChange={(e) => { setContrasena(e.target.value); setCopiada(false); }}
                     type="text" minLength={8} required={sinCorreos} autoComplete="new-password" placeholder="Contraseña (mínimo 8)"
-                    className="flex-1 h-9 px-3 rounded-md border border-border bg-background text-sm" />
+                    aria-label="Contraseña"
+                    className={`${inputClass} flex-1 min-w-0`} />
                   <Button type="button" variant="outline" size="sm"
                     onClick={() => { setContrasena(generarContrasena()); setCopiada(false); }}>
                     <ArrowsClockwise size={14} weight="bold" className="mr-1.5" /> Generar
@@ -838,7 +827,7 @@ export default function TutoresPage() {
                     {copiada ? <CheckCircle size={14} weight="fill" className="text-emerald-600" /> : <Copy size={14} weight="bold" />}
                   </Button>
                 </div>
-                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                <p className="px-1 text-secundario text-muted-foreground leading-relaxed">
                   {sinCorreos
                     ? 'No se le manda ningún correo: entra con esta contraseña. Cópiala y pásasela tú antes de dar de alta, porque después no se puede volver a ver.'
                     : contrasena
@@ -849,10 +838,10 @@ export default function TutoresPage() {
 
               {projects.length > 1 && (
                 <section className="space-y-2 border-t border-border pt-4">
-                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <h3 className="text-tabla uppercase text-muted-foreground">
                     En qué marcas da clase
                   </h3>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="px-1 text-secundario text-muted-foreground">
                     Solo podrá cobrar de cursos de las marcas que marques aquí.
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -876,42 +865,39 @@ export default function TutoresPage() {
 
               <section className="space-y-2 border-t border-border pt-4">
                 <div className="flex items-baseline justify-between gap-2">
-                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Sus cursos</h3>
+                  <h3 className="text-tabla uppercase text-muted-foreground">Sus cursos</h3>
                   {cursosAlta.length > 0 && (
-                    <span className="text-[11px] text-muted-foreground tabular-nums">
+                    <span className="text-secundario text-muted-foreground tabular-nums">
                       {cursosAlta.length} {cursosAlta.length === 1 ? 'curso' : 'cursos'}
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground">
+                <p className="px-1 text-secundario text-muted-foreground">
                   Puedes añadirle todos los que dé. Cada uno con su porcentaje y desde cuándo lo lleva.
                 </p>
 
-                <div className="grid grid-cols-[minmax(0,1fr)_5rem_9.5rem_auto] gap-2 items-end">
-                  <label className="mb-1.5 block px-1 text-secundario text-muted-foreground min-w-0">
-                    Curso
-                    <div className="mt-1">
-                      <BuscadorCurso
-                        cursos={formaciones}
-                        valor={nuevoCurso ? Number(nuevoCurso) : null}
-                        onElegir={(id) => setNuevoCurso(id ? String(id) : '')}
-                        excluir={cursosAlta.map((c) => c.productId)}
-                      />
-                    </div>
-                  </label>
-                  <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">
-                    %
-                    <input type="number" step="0.5" min="0" max="100" value={nuevoPct}
+                {/* En el móvil no caben cuatro columnas: el curso va arriba, el
+                    porcentaje y la fecha debajo, y «Añadir» a lo ancho (#106). */}
+                <div className="grid grid-cols-2 sm:grid-cols-[minmax(0,1fr)_5rem_9.5rem_auto] gap-2 items-end">
+                  <Field label="Curso" className="col-span-2 sm:col-span-1">
+                    <BuscadorCurso
+                      cursos={formaciones}
+                      valor={nuevoCurso ? Number(nuevoCurso) : null}
+                      onElegir={(id) => setNuevoCurso(id ? String(id) : '')}
+                      excluir={cursosAlta.map((c) => c.productId)}
+                    />
+                  </Field>
+                  <Field label="%" htmlFor="alta-curso-pct">
+                    <input id="alta-curso-pct" type="number" step="0.5" min="0" max="100" value={nuevoPct}
                       onChange={(e) => setNuevoPct(e.target.value)}
-                      className="mt-1 w-full h-9 px-2 rounded-md border border-border bg-background text-sm tabular-nums" />
-                  </label>
-                  <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">
-                    Lo lleva desde
-                    <input type="date" value={nuevaFecha} onChange={(e) => setNuevaFecha(e.target.value)}
-                      className="mt-1 w-full h-9 px-2 rounded-md border border-border bg-background text-sm" />
-                  </label>
+                      className={`${inputClass} tabular-nums`} />
+                  </Field>
+                  <Field label="Lo lleva desde" htmlFor="alta-curso-desde">
+                    <input id="alta-curso-desde" type="date" value={nuevaFecha} onChange={(e) => setNuevaFecha(e.target.value)}
+                      className={inputClass} />
+                  </Field>
                   <Button type="button" variant="outline" size="sm" disabled={!nuevoCurso}
-                    onClick={anadirCursoAlAlta} className="h-9">
+                    onClick={anadirCursoAlAlta} className="h-9 col-span-2 sm:col-span-1">
                     <Plus size={14} weight="bold" className="mr-1" /> Añadir
                   </Button>
                 </div>
@@ -922,7 +908,7 @@ export default function TutoresPage() {
                       <li key={c.productId} className="flex items-center gap-3 px-3 py-2 text-sm bg-muted/30">
                         <div className="min-w-0 flex-1">
                           <p className="truncate">{formaciones.find((fo) => fo.id === c.productId)?.nombre}</p>
-                          <p className="text-[11px] text-muted-foreground tabular-nums">
+                          <p className="text-secundario text-muted-foreground tabular-nums">
                             desde el {enCastellano(c.desde)}
                           </p>
                         </div>
@@ -944,7 +930,7 @@ export default function TutoresPage() {
                 )}
 
                 {ajustes && (
-                  <p className="text-[11px] text-muted-foreground flex gap-1.5">
+                  <p className="px-1 text-secundario text-muted-foreground flex gap-1.5">
                     <Warning size={13} weight="fill" className="text-amber-500 shrink-0 mt-0.5" />
                     <span>
                       Aunque pongas una fecha anterior, no se paga nada cobrado antes del{' '}
@@ -988,25 +974,20 @@ export default function TutoresPage() {
             />
             <input type="hidden" name="productId" value={cursoColab ?? ''} />
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">
-                Porcentaje
-                <input name="pct" type="number" step="0.5" min="0" max="100" defaultValue="10" required
-                  className="mt-1 w-full h-9 px-3 rounded-md border border-border bg-background text-sm" />
-              </label>
-              <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">
-                Desde
-                <input name="desde" type="date" defaultValue={hoy()} required
-                  className="mt-1 w-full h-9 px-2 rounded-md border border-border bg-background text-sm" />
-              </label>
-              <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">
-                Hasta
-                <input name="hasta" type="date"
-                  className="mt-1 w-full h-9 px-2 rounded-md border border-border bg-background text-sm" />
-              </label>
-            </div>
+            <FilaCampos columnas={3}>
+              <Field label="Porcentaje" required htmlFor="colab-pct">
+                <input id="colab-pct" name="pct" type="number" step="0.5" min="0" max="100" defaultValue="10" required
+                  className={inputClass} />
+              </Field>
+              <Field label="Desde" required htmlFor="colab-desde">
+                <input id="colab-desde" name="desde" type="date" defaultValue={hoy()} required className={inputClass} />
+              </Field>
+              <Field label="Hasta" htmlFor="colab-hasta">
+                <input id="colab-hasta" name="hasta" type="date" className={inputClass} />
+              </Field>
+            </FilaCampos>
 
-            <p className="text-xs text-muted-foreground flex gap-1.5">
+            <p className="px-1 text-secundario text-muted-foreground flex gap-1.5">
               <Warning size={14} weight="fill" className="text-amber-500 shrink-0 mt-0.5" />
               <span>
                 <strong>Desde</strong> es el día que empezó con esta formación, no el de hoy si ya llevaba
@@ -1038,77 +1019,64 @@ export default function TutoresPage() {
               </button>
             </div>
 
-            <label className="mb-1.5 block px-1 text-secundario font-medium">
-              Nombre
-              <input value={datos.nombre}
+            <Field label="Nombre" htmlFor="datos-nombre">
+              <input id="datos-nombre" value={datos.nombre}
                 onChange={(e) => setDatos({ ...datos, nombre: e.target.value })}
-                className="mt-1 w-full h-9 px-3 rounded-md border border-border bg-background text-sm font-normal" />
-            </label>
+                className={inputClass} />
+            </Field>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label className="mb-1.5 block px-1 text-secundario font-medium">
-                DNI / NIF
-                <input value={datos.dniNif}
+            <FilaCampos>
+              <Field label="DNI / NIF" htmlFor="datos-dni">
+                <input id="datos-dni" value={datos.dniNif}
                   onChange={(e) => setDatos({ ...datos, dniNif: e.target.value })}
-                  className="mt-1 w-full h-9 px-3 rounded-md border border-border bg-background text-sm font-normal" />
-              </label>
-              <label className="mb-1.5 block px-1 text-secundario font-medium">
-                Telefono
-                <input value={datos.telefono}
+                  className={inputClass} />
+              </Field>
+              <Field label="Teléfono" htmlFor="datos-tel">
+                <input id="datos-tel" value={datos.telefono}
                   onChange={(e) => setDatos({ ...datos, telefono: e.target.value })}
-                  className="mt-1 w-full h-9 px-3 rounded-md border border-border bg-background text-sm font-normal" />
-              </label>
-            </div>
+                  className={inputClass} />
+              </Field>
+            </FilaCampos>
 
-            <label className="mb-1.5 block px-1 text-secundario font-medium">
-              IBAN
-              <input value={datos.iban}
+            <Field label="IBAN" htmlFor="datos-iban" hint="Donde se le paga. Los espacios se quitan solos.">
+              <input id="datos-iban" value={datos.iban}
                 onChange={(e) => setDatos({ ...datos, iban: e.target.value })}
                 placeholder="ES00 0000 0000 0000 0000 0000"
-                className="mt-1 w-full h-9 px-3 rounded-md border border-border bg-background text-sm font-normal tabular-nums" />
-              <span className="block text-[11px] text-muted-foreground font-normal mt-1">
-                Donde se le paga. Los espacios se quitan solos.
-              </span>
-            </label>
+                className={`${inputClass} tabular-nums`} />
+            </Field>
 
             {/* El banco, suelto y no deducido del IBAN: hay tutores fuera de
                 Europa, y ahi el numero de cuenta no lleva codigo de entidad. */}
-            <label className="mb-1.5 block px-1 text-secundario font-medium">
-              Banco
-              <input value={datos.banco}
+            <Field label="Banco" htmlFor="datos-banco">
+              <input id="datos-banco" value={datos.banco}
                 onChange={(e) => setDatos({ ...datos, banco: e.target.value })}
                 placeholder="BBVA, Santander, Galicia…"
-                className="mt-1 w-full h-9 px-3 rounded-md border border-border bg-background text-sm font-normal" />
-            </label>
+                className={inputClass} />
+            </Field>
 
             {/* El correo es la CREDENCIAL, no un dato de contacto: al cambiarlo,
                 con el viejo ya no se entra. De ahi la casilla de reenviar. */}
-            <label className="mb-1.5 block px-1 text-secundario font-medium">
-              Correo
-              <input type="email" value={datos.email}
+            <Field label="Correo" htmlFor="datos-email" disabled={!esSuperadmin}
+              hint={esSuperadmin ? undefined : 'Solo un superadmin puede cambiar el correo.'}>
+              <input id="datos-email" type="email" value={datos.email}
                 onChange={(e) => setDatos({ ...datos, email: e.target.value })}
                 readOnly={!esSuperadmin} disabled={!esSuperadmin}
-                className={`mt-1 w-full h-9 px-3 rounded-md border border-border bg-background text-sm font-normal ${esSuperadmin ? '' : 'opacity-60 cursor-not-allowed'}`} />
-              {!esSuperadmin && (
-                <span className="mt-1 block text-[11px] font-normal text-muted-foreground">
-                  Solo un superadmin puede cambiar el correo.
-                </span>
-              )}
-            </label>
+                className={`${inputClass} ${esSuperadmin ? '' : 'opacity-60 cursor-not-allowed'}`} />
+            </Field>
 
             {esSuperadmin && datos.email.trim().toLowerCase() !== (elegido.email || '').toLowerCase() && (
               <div className="rounded-md border border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40 px-3 py-2 space-y-2">
-                <p className="text-[11px] text-amber-800 dark:text-amber-300">
+                <p className="text-secundario text-amber-800 dark:text-amber-300">
                   El correo es con lo que entra al CRM. Al cambiarlo se cierran sus
                   sesiones y con el anterior ya no podra entrar.
                 </p>
                 {sinCorreos ? (
-                  <p className="text-[11px] text-amber-900 dark:text-amber-200">
+                  <p className="text-secundario text-amber-900 dark:text-amber-200">
                     No se le manda ningún correo: después de cambiarlo, ponle una contraseña
                     nueva desde «Cambiar contraseña» y pásasela tú.
                   </p>
                 ) : (
-                  <label className="flex items-start gap-2 text-[11px] text-amber-900 dark:text-amber-200">
+                  <label className="flex items-start gap-2 text-secundario text-amber-900 dark:text-amber-200">
                     <input type="checkbox" checked={datos.reenviar} className="mt-0.5"
                       onChange={(e) => setDatos({ ...datos, reenviar: e.target.checked })} />
                     <span>
@@ -1152,34 +1120,31 @@ export default function TutoresPage() {
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">
-                Porcentaje
-                <input name="pct" type="number" step="0.5" min="0" max="100" required
+            <FilaCampos columnas={3}>
+              <Field label="Porcentaje" required htmlFor="editar-colab-pct">
+                <input id="editar-colab-pct" name="pct" type="number" step="0.5" min="0" max="100" required
                   defaultValue={Number(editColab.pct)}
-                  className="mt-1 w-full h-9 px-3 rounded-md border border-border bg-background text-sm tabular-nums" />
-              </label>
-              <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">
-                Desde
-                <input name="desde" type="date" required
+                  className={`${inputClass} tabular-nums`} />
+              </Field>
+              <Field label="Desde" required htmlFor="editar-colab-desde">
+                <input id="editar-colab-desde" name="desde" type="date" required
                   defaultValue={String(editColab.vigente_desde).slice(0, 10)}
-                  className="mt-1 w-full h-9 px-2 rounded-md border border-border bg-background text-sm" />
-              </label>
-              <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">
-                Hasta
-                <input name="hasta" type="date"
+                  className={inputClass} />
+              </Field>
+              <Field label="Hasta" htmlFor="editar-colab-hasta">
+                <input id="editar-colab-hasta" name="hasta" type="date"
                   defaultValue={editColab.vigente_hasta ? String(editColab.vigente_hasta).slice(0, 10) : ''}
-                  className="mt-1 w-full h-9 px-2 rounded-md border border-border bg-background text-sm" />
-              </label>
-            </div>
+                  className={inputClass} />
+              </Field>
+            </FilaCampos>
 
-            <p className="text-[11px] text-muted-foreground">
+            <p className="px-1 text-secundario text-muted-foreground">
               Dejar «hasta» en blanco es <strong>en adelante</strong>. Cambiar el porcentaje no rehace
               las comisiones ya calculadas: solo manda de aquí en adelante.
             </p>
 
             {!editColab.activa && (
-              <p className="text-[11px] text-amber-700 dark:text-amber-300">
+              <p className="px-1 text-secundario text-amber-700 dark:text-amber-300">
                 Está desactivada, así que no genera comisión aunque cambies las fechas. Reactívala desde su fila.
               </p>
             )}
@@ -1210,7 +1175,7 @@ export default function TutoresPage() {
             <div className="flex gap-1.5">
               <input value={claveNueva} onChange={(e) => { setClaveNueva(e.target.value); setClaveCopiada(false); }}
                 aria-label="Nueva contraseña" autoComplete="new-password"
-                className="flex-1 h-9 px-3 rounded-md border border-border bg-background text-sm font-mono min-w-0" />
+                className={`${inputClass} flex-1 font-mono min-w-0`} />
               <Button type="button" variant="outline" size="sm" aria-label="Generar otra"
                 onClick={() => { const c = generarContrasena(); setClaveNueva(c); setClaveRepetida(c); setClaveCopiada(false); }}>
                 <ArrowsClockwise size={14} weight="bold" />
@@ -1223,9 +1188,9 @@ export default function TutoresPage() {
             {/* Repetida, como en «Establece tu contraseña» (#248). La generada ya la rellena. */}
             <input value={claveRepetida} onChange={(e) => setClaveRepetida(e.target.value)}
               placeholder="Repítela" aria-label="Repite la contraseña" autoComplete="new-password"
-              className="w-full h-9 px-3 rounded-md border border-border bg-background text-sm font-mono" />
+              className={`${inputClass} font-mono`} />
             {problemaDeContrasena(claveNueva, claveRepetida) && (
-              <p className="text-[11px] text-amber-600 dark:text-amber-400">
+              <p className="px-1 text-secundario text-amber-600 dark:text-amber-400">
                 {problemaDeContrasena(claveNueva, claveRepetida)}
               </p>
             )}
