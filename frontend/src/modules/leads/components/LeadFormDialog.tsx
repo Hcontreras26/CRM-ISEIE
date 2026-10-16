@@ -14,6 +14,8 @@ import client from '@/shared/api/client';
 import { detectCountryFromPhone } from '../lib/phoneCountry';
 import { useEscapeKey } from '@/shared/hooks/useDialogA11y';
 import type { Lead } from '@/shared/types';
+import Field from '@/shared/components/ui/Field';
+import FilaCampos from '@/shared/components/ui/FilaCampos';
 
 interface CustomFieldDef {
   id: number;
@@ -40,23 +42,6 @@ interface Props {
   onClose: () => void;
   lead: Lead | null;
   onSubmit: (data: LeadFormData & { custom_fields: Record<string, unknown> }) => Promise<void> | void;
-}
-
-function Field({ label, error, hint, children, required }: { label: string; error?: string; hint?: string; children: React.ReactNode; required?: boolean }) {
-  // Si el label termina en " *" lo separamos para colorear el asterisco.
-  const trimmed = label.replace(/\s*\*\s*$/, '');
-  const isRequired = required || trimmed !== label;
-  return (
-    <div>
-      <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">
-        {trimmed}
-        {isRequired && <span className="text-rose-500 font-bold ml-0.5">*</span>}
-      </label>
-      {children}
-      {hint && <p className="text-xs text-muted-foreground mt-1 px-1">{hint}</p>}
-      {error && <p className="text-xs text-rose-500 mt-1 px-1">{error}</p>}
-    </div>
-  );
 }
 
 
@@ -96,6 +81,11 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
       origen: 'directo', producto_interes: '', pais: '', notas: '',
     },
   });
+
+  // El aviso de un `refine` sin `path` (la forma de contacto) no cuelga de
+  // ningún campo: zodResolver lo deja en la clave vacía, o en `root`.
+  const errorSinCampo = (errors as Record<string, { message?: string } | undefined>)['']?.message
+    ?? errors.root?.message;
 
   const watchedEmail = watch('email');
   const watchedTelefono = watch('telefono');
@@ -214,8 +204,9 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
           </div>
 
           <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Field label={(customValues as any)?._sin_nombre ? 'Nombre (se generará automáticamente)' : 'Nombre *'} error={errors.nombre?.message}>
+            <FilaCampos>
+              <Field label={(customValues as any)?._sin_nombre ? 'Nombre (se generará automáticamente)' : 'Nombre'}
+                required={!(customValues as any)?._sin_nombre} error={errors.nombre?.message}>
                 <input
                   {...register('nombre')}
                   placeholder={(customValues as any)?._sin_nombre ? 'Se autorellenará como Anónimo (tel ...)' : 'Nombre completo'}
@@ -226,7 +217,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
               <Field label="Email" error={errors.email?.message} hint="Opcional si pones teléfono">
                 <input {...register('email')} type="email" placeholder="correo@ejemplo.com (opcional)" className={inputClass} />
               </Field>
-            </div>
+            </FilaCampos>
 
             {/* Checkbox para personas que llegan sin nombre — evita duplicados por colision de "Sin nombre" */}
             <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
@@ -275,7 +266,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
               </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <FilaCampos>
               <Field label="Teléfono" error={errors.telefono?.message} hint="Opcional si pones email">
                 <div className="relative">
                   <input {...register('telefono')} placeholder="+34 600 000 000 (opcional)" className={inputClass + ' pr-14'} />
@@ -293,7 +284,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                   })()}
                 </div>
               </Field>
-              <Field label="Origen *" error={errors.origen?.message}>
+              <Field label="Origen" required error={errors.origen?.message}>
                 <Controller
                   name="origen"
                   control={control}
@@ -307,7 +298,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                   )}
                 />
               </Field>
-            </div>
+            </FilaCampos>
               {/* Numero o usuario de WhatsApp.
                   El desplegable elige QUE se esta escribiendo, no «uno u otro
                   para siempre»: la misma persona puede tener los dos, y con
@@ -329,15 +320,21 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                     `min-w-0` en el segundo hace falta: sin el, un elemento flex
                     no baja de su contenido y vuelve a desbordar. */}
                 <div className="flex gap-2 items-start">
+                  {/* El desplegable del CRM, no el del sistema. Era el único
+                      control del formulario con la flecha del navegador, al
+                      lado de «Origen» y «País» que llevan la del CRM: un solo
+                      campo distinto en un formulario se ve enseguida (#125, #134). */}
                   <div className="w-40 flex-none">
-                    <select
+                    <Select<ModoContacto>
                       value={modoContacto}
-                      onChange={(e) => setModoContacto(e.target.value as ModoContacto)}
-                      className={inputClass}>
-                      <option value="numero">Número</option>
-                      <option value="usuario">Usuario de WhatsApp</option>
-                      <option value="ambos">Ambos</option>
-                    </select>
+                      onChange={(v) => setModoContacto(v)}
+                      ariaLabel="Qué tienes de WhatsApp"
+                      options={[
+                        { value: 'numero', label: 'Número' },
+                        { value: 'usuario', label: 'Usuario de WhatsApp' },
+                        { value: 'ambos', label: 'Ambos' },
+                      ]}
+                    />
                   </div>
                   {modoContacto !== 'numero' && (
                     <div className="flex-1 min-w-0">
@@ -349,8 +346,8 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                 </div>
               </Field>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label={`${productoLabel} de interes`}>
+            <FilaCampos>
+              <Field label={`${productoLabel} de interés`}>
                 <Controller
                   name="producto_interes"
                   control={control}
@@ -366,7 +363,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                   )}
                 />
               </Field>
-              <Field label="Pais">
+              <Field label="País">
                 <Controller
                   name="pais"
                   control={control}
@@ -383,17 +380,15 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                   )}
                 />
               </Field>
-            </div>
+            </FilaCampos>
 
             {customFields.length > 0 && (
               <div className="border-t border-border pt-3 mt-3 space-y-3">
-                <p className="text-xs text-muted-foreground text-muted-foreground">Campos personalizados</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <p className="mb-1.5 px-1 text-tabla uppercase text-muted-foreground">Campos personalizados</p>
+                <FilaCampos>
                   {customFields.map(f => (
-                    <div key={f.id} className={f.type === 'textarea' ? 'sm:col-span-2' : ''}>
-                      <label className="mb-1.5 block px-1 text-secundario text-muted-foreground">
-                        {f.label} {f.required && <span className="text-red-500">*</span>}
-                      </label>
+                    <Field key={f.id} label={f.label} required={f.required}
+                      className={f.type === 'textarea' ? 'sm:col-span-2' : undefined}>
                       {f.type === 'textarea' ? (
                         <textarea
                           value={(customValues[f.field_key] as string) || ''}
@@ -417,7 +412,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                             checked={!!customValues[f.field_key]}
                             onChange={e => setCustomValues({ ...customValues, [f.field_key]: e.target.checked })}
                           />
-                          <span className="text-sm">Si</span>
+                          <span className="text-sm">Sí</span>
                         </label>
                       ) : (
                         <input
@@ -428,9 +423,9 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                           className={inputClass}
                         />
                       )}
-                    </div>
+                    </Field>
                   ))}
-                </div>
+                </FilaCampos>
               </div>
             )}
 
@@ -439,9 +434,16 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                 {...register('notas')}
                 placeholder="Notas adicionales sobre el lead..."
                 rows={3}
-                className="w-full px-4 py-3 rounded-md border border-border bg-muted/50 text-sm outline-none resize-none transition-all focus:border-primary focus:ring-4 focus:ring-primary/10 focus:bg-card placeholder:text-muted-foreground"
+                className={`${inputClass} h-auto py-2 resize-none`}
               />
             </Field>
+
+            {/* Lo que no es de un campo concreto: «hace falta al menos una forma
+                de contacto». El esquema lo devolvía sin campo y no se pintaba en
+                ningún sitio, así que al pulsar «Crear» no pasaba nada (#106). */}
+            {errorSinCampo && (
+              <p role="alert" className="px-1 text-secundario text-destructive">{errorSinCampo}</p>
+            )}
 
             <div className="flex justify-end gap-2 pt-2">
               <button type="button" onClick={onClose}
