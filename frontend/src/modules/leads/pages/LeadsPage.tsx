@@ -75,6 +75,7 @@ import BulkActionBar from '../components/BulkActionBar';
 import usePermission from '@/shared/hooks/usePermission';
 import { getLeadPriority, getPriorityStyle } from '../lib/leadPriority';
 import { getLeadExportColumns } from '../lib/leadFormat';
+import { yaPaso } from '@/shared/lib/fechas';
 import ParaHoyYManana from '@/shared/components/dashboard/ParaHoyYManana';
 import { PROCESO_EN_PRUEBAS } from '@/shared/lib/enPruebas';
 import { entroEnElProceso } from '@/shared/lib/enElProceso';
@@ -1084,7 +1085,7 @@ export default function LeadsPage() {
                   </td>
                   <td className="px-5 py-3.5 text-xs">
                     {lead.next_reminder_at ? (
-                      <span className={(new Date(lead.next_reminder_at) < new Date()) ? 'text-red-600 font-medium' : 'text-foreground'}>
+                      <span className={yaPaso(lead.next_reminder_at) ? 'text-red-600 font-medium' : 'text-foreground'}>
                         {formatRelative(lead.next_reminder_at, { future: true })}
                       </span>
                     ) : <span className="text-muted-foreground/60">—</span>}
@@ -1151,7 +1152,7 @@ export default function LeadsPage() {
                   <span className="text-muted-foreground">Último: <span className="text-foreground">{formatFecha(lead.last_interaction_at)}</span></span>
                 )}
                 {lead.next_reminder_at && (
-                  <span className={(new Date(lead.next_reminder_at) < new Date()) ? 'text-red-600 font-semibold' : 'text-muted-foreground'}>
+                  <span className={yaPaso(lead.next_reminder_at) ? 'text-red-600 font-semibold' : 'text-muted-foreground'}>
                     Próximo: <span className="font-medium">{formatRelative(lead.next_reminder_at, { future: true })}</span>
                   </span>
                 )}
