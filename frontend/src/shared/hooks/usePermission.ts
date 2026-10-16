@@ -49,6 +49,8 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<UserRole, PermissionMap> = {
     'reports.read': true,
     // Sin tablero (Diego, 09/10: «las gestoras no tienen tareas»): ni menú ni API.
   },
+  // El tutor no entra al CRM normal (como en MultiCRM): ningún permiso por defecto.
+  tutor: {},
   // Colaborador (#210, fase 5): solo su tablero de tareas. Espejo del backend.
   colaborador: {
     'tasks.view_all': false, 'tasks.view_own': true, 'tasks.create': true, 'tasks.assign': false, 'tasks.edit': true, 'tasks.delete': false, 'tasks.close': false, 'tasks.manage': false,

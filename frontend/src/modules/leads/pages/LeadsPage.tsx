@@ -1267,7 +1267,9 @@ export default function LeadsPage() {
           open={csvImportOpen}
           onClose={() => setCsvImportOpen(false)}
           projectId={activeProject?.id}
-          onImported={({ ok }) => { if (ok > 0) refetch(); }}
+          // El diálogo avisa sin argumentos: desestructurar `{ ok }` de nada reventaba al
+          // terminar la importación. Se recarga siempre.
+          onImported={() => refetch()}
         />
       </Suspense>
 
@@ -1294,7 +1296,10 @@ export default function LeadsPage() {
       <Suspense fallback={null}>
         <SpamReportDialog
           open={!!reportingSpamLead}
-          lead={reportingSpamLead}
+          // El diálogo espera `leadId` y `leadNombre` (como en MultiCRM): con `lead` no le
+          // llegaba nada y el reporte de spam desde la lista salía sin ficha.
+          leadId={reportingSpamLead?.id}
+          leadNombre={reportingSpamLead?.nombre}
           onClose={() => setReportingSpamLead(null)}
           onReported={() => setReportingSpamLead(null)}
         />
