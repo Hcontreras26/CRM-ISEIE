@@ -171,7 +171,7 @@ export default function NotificationsBell({ collapsed = false, className = '' })
   // Las notificaciones ya leídas no cuentan (antes contaba las 20 últimas, leídas o no);
   // los avisos del día —recordatorios vencidos, cobros, prospectos nuevos— sí. En MultiCRM
   // la campana ya contaba solo lo no leído.
-  const unread = items.filter((i) => i.isRead !== true).length;
+  const unread = items.filter((it) => (it.notifId ? !it.isRead : true)).length;
   const Icon = unread > 0 ? BellRinging : Bell;
 
   return (

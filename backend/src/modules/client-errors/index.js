@@ -9,7 +9,7 @@ const limiter = rateLimit({
   limit: 30,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
-  keyGenerator: (req) => `client-err-ip-${ipKeyGenerator(req)}`,
+  keyGenerator: (req) => `client-err-ip-${ipKeyGenerator(req.ip)}`,
 });
 
 router.post('/', limiter, (req, res) => {
