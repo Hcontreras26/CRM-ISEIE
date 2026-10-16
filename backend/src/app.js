@@ -58,6 +58,8 @@ import novedadesModule from './modules/novedades/index.js';
 import certifexModule from './modules/certifex/index.js';
 // Sistema → Registro (#111), como en MultiCRM: quién hizo qué y los sucesos del sistema.
 import registroModule from './modules/registro/index.js';
+// Sistema → Mensajes: el chat interno del equipo, como en MultiCRM. Migración 232.
+import messagesModule from './modules/messages/index.js';
 import mcpModule from './modules/mcp/index.js';
 import { startFeedbackDia7Scheduler } from './jobs/feedbackDia7Scheduler.js';
 import { startNovedadesScheduler } from './jobs/novedadesScheduler.js';
@@ -273,6 +275,8 @@ const MODULES = [
   certifexModule,
   // Sistema → Registro (#111): solo lectura sobre lo que ya se apunta. Admin y superadmin.
   registroModule,
+  // Mensajes del equipo (/api/mensajes, con /api/messages de alias).
+  messagesModule,
   // Conexion de Claude por MCP: solo consulta, con token personal (como MultiCRM).
   mcpModule,
 ];
