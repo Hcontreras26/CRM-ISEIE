@@ -168,6 +168,9 @@ Fuente de verdad del esquema. Cada archivo en `backend/migrations/` es un SQL ej
 | 220 | 220_facturas_colaborador.sql | Facturas de colaboradores (#202): `colaboradores`, `colaborador_empresas`, `facturas_colaborador` y su registro (la 198 de MultiCRM) |
 | 221 | 221_facturas_colaborador_desglose_y_pago.sql | Cómo cobra cada colaborador (fijo, por hora, por proyecto, IVA e IRPF), el desglose en líneas y el pago (la 201 de MultiCRM) |
 | 222 | 222_facturas_colaborador_importe_pdf.sql | El total que pone el PDF (`importe_pdf`): cuadra si es el importe escrito (la 202 de MultiCRM) |
+| 230 | 230_certifex_solicitudes_diploma.sql | Certifex · Diplomas (#272): solicitudes de diploma desde Moodle, lo revisado a mano antes de aprobar y el aviso «ha terminado la formación» (la 199 de MultiCRM). Reaplicable. **No aplicada (15/10)** |
+| 231 | 231_registro_tareas.sql | Sistema → Registro (#111): una fila por vuelta de cada tarea programada, con su limpieza en `jobs/latido.js` (la 144 de MultiCRM). Reaplicable. **No aplicada (15/10)** |
+| 232 | 232_mensajeria_interna.sql | Sistema → Mensajes: `conversations`, `conversation_participants` y `messages` (la 064 de MultiCRM, con IF NOT EXISTS). **No aplicada (15/10)** |
 
 > **09/10/2026, comprobado contra el catálogo de producción:** aplicadas hasta la **183** (la 183, el
 > 09/10 con la checklist manual).
