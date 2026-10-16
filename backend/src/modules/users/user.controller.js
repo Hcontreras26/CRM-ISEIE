@@ -1,7 +1,8 @@
 import * as userService from './user.service.js';
 import * as userModel from './user.model.js';
-import { createUserSchema, updateUserSchema, listUsersSchema, adminSetPasswordSchema } from './user.validation.js';
+import { createUserSchema, updateUserSchema, listUsersSchema, adminSetPasswordSchema, activityLogSchema } from './user.validation.js';
 import { AppError } from '../../shared/utils/AppError.js';
+import { veTodoElCrm, campusDeLaPersona } from '../../shared/utils/ambito.js';
 import { saveLocal, getLocal, deleteLocal } from '../../shared/services/localStorage.service.js';
 import { mimeToExt, extToMime } from '../../shared/utils/mime.js';
 import crypto from 'crypto';
@@ -21,17 +22,26 @@ export async function list(req, res, next) {
   } catch (err) { next(err); }
 }
 
+// «Actividad» (`/activity`). Super admin y soporte ven todo el registro; un
+// admin, lo suyo y lo de quien comparte con él algún campus (#245, el mismo
+// criterio que `proyectosDelAmbito`). Se decide por el token, no por la pantalla.
 export async function activityLog(req, res, next) {
   try {
-    const { userId, action, search } = req.query;
-    const limit  = Math.max(1, Math.min(500, parseInt(req.query.limit) || 100));
-    const offset = Math.max(0, parseInt(req.query.offset) || 0);
+    const parsed = activityLogSchema.safeParse(req.query);
+    if (!parsed.success) {
+      throw new AppError(parsed.error.errors[0].message, 400, 'VALIDATION_ERROR');
+    }
+    const { userId, action, search, limit, offset } = parsed.data;
+    const ambito = veTodoElCrm(req.user)
+      ? null
+      : { userId: req.user.userId, projectIds: await campusDeLaPersona(req.user.userId) };
     const result = await userModel.listActivityLog({
-      userId: userId ? parseInt(userId) : null,
+      userId: userId ?? null,
       action: action || null,
       search: search || null,
       limit,
       offset,
+      ambito,
     });
     res.json({ success: true, data: result.items, pagination: { total: result.total, limit, offset } });
   } catch (err) { next(err); }
