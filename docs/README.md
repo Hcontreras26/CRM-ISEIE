@@ -37,6 +37,20 @@ VPS `72.60.90.135`. PM2 corre como **root** (`sudo pm2 …`).
 **Resumen del día de dirección:** a las 19 del reloj del servidor (`RESUMEN_HORA`, las 21:00 de Madrid). La tarea mira cada 30 minutos y la primera vez a los 30 minutos de arrancar: **no reiniciar la API entre las 21:31 y las 22:00 de Madrid**, o ese día no sale. El reporte semanal sale los lunes. Un superadmin recibe todas las empresas, tenga o no campus asignados.
 
 
+## Certifex: enlace en producción (#272, traído de MultiCRM el 15/10)
+
+El mismo panel que MultiCRM (paridad). Certifex emite los diplomas; el CRM decide **quién** lo recibe y **cuándo** se le avisa. Pantallas: Matrículas → **Certificaciones** (Emisiones y Consultas de la web) y Matrículas → **Diplomas** (lo que piden los alumnos desde Moodle; también en el menú, Clientes → Diplomas). Solo admin y superadmin aprueban, emiten, envían, corrigen y revocan; soporte ve las Consultas.
+
+**Lo que hace el CRM y lo que no.** Emitir **no** manda correo: el diploma queda «pendiente de aviso» y alguien lo envía con «Enviar diploma al alumno» después de ver el PDF. Rechazar tampoco avisa: el aviso de rechazo es otro botón. Un nombre mal escrito se **corrige** (mismo número y mismo QR), no se revoca. Al emitir, el CRM manda el **programa oficial** de la formación vendida (horas de `products.horas`, temario de `product_modules` y modalidad del catálogo) si la encuentra sin dudas: el campus de Certifex (ISEIE) tiene que casar con **un** proyecto del CRM por nombre o slug, y la venta, con el nombre del curso de Moodle. «Sincronizar módulos con el producto» (#312) rellena `product_modules` leyendo «Módulo N: título» de la página del curso (`backend/src/modules/products/temario.js`). El CRM nunca enseña un enlace a una dirección local (#334): si Certifex devuelve `localhost` o una IP privada, el panel lo avisa en vez de pintar el enlace.
+
+**Variables — backend (`.env` del servidor, nunca en el frontal):** `CERTIFEX_API_URL`, `CERTIFEX_CRM_CLAVE` (la clave de este CRM, `cfx_crm_…`, la de `--nombre=CRM-ISEIE --centros=ISEIE`), `CERTIFEX_PUBLICO_URL` (opcional) y `CERTIFEX_WEBHOOK_SECRETO` (con el que Certifex entrega `POST /api/certifex/consultas`, `/solicitudes` y `/completados`; sin él, 404; con otro, 401).
+
+**Interruptor — frontal:** `VITE_CERTIFEX_PANEL=1` enseña Certificaciones y Diplomas (`frontend/src/shared/lib/certifexPanel.ts`). Sin ponerla vale lo que `SOLO_EN_PRUEBAS`: **apagado en producción**, encendido en local y en /staging; `=0` lo apaga también en pruebas. Se lee al compilar.
+
+**Migraciones:** `173_certifex_consultas.sql` (la 186 de MultiCRM) y `230_certifex_solicitudes_diploma.sql` (la 199 de MultiCRM, mismo esquema): solicitudes, aviso de rechazo, lo revisado a mano antes de aprobar y el aviso «ha terminado la formación». Reaplicables.
+
+**Orden de despliegue:** Certifex primero (contrato `/api/crm/v1` completo); luego el CRM en staging con la 230 y las cuatro variables apuntando a un Certifex de pruebas; Diego lo aprueba; y solo entonces producción con `VITE_CERTIFEX_PANEL=1`. El candado de un centro en Certifex (`npm run crm:clave`) va el último: desde ese momento ISEIE no emite nada sin el OK del CRM.
+
 ## Versión 2.0.0 (en producción desde el 29/09/2026)
 
 Lo nuevo está dentro del CRM en **Novedades** (`backend/src/modules/novedades/versiones.js`) y en la release `v2.0.0` de GitHub. En corto: el proceso comercial (cola por tramos, pasos en la ficha, seguimiento de fin de mes; desde el 29/09 un contacto solo cierra el paso que toca, en su día y uno por día — `shared/utils/pasoCerrado.js`), el feedback de quien no compra (correo, encuesta, panel y Reportes), las Novedades, los correos del equipo, mejoras de ventas y facturación, y la marca de ISEIE en correos y formularios.
