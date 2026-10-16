@@ -18,6 +18,50 @@ async function issuerOfProject(exec, projectId) {
 // de una misma sociedad comparten contador por serie+año, aunque sean de proyectos
 // distintos. Si el proyecto no tiene sociedad (issuerId null) cae al contador por
 // proyecto (legacy). Atómico dentro de la transacción vía FOR UPDATE / índice único.
+/**
+ * Reservar un numero ELEGIDO A MANO (traída de MultiCRM, 30df5fd8).
+ *
+ * `updateDraft` ya la llamaba para cambiar el número de una factura numerada
+ * (c3ac430, 18/09) pero aquí no existía: cambiar el número daba un 500
+ * (ReferenceError). Lo cazó el linter de la CI.
+ *
+ * Diego, 14/09: «que se ponga con numero de factura y que salga el numero
+ * siguiente disponible, pero que pueda poner ese u otro».
+ *
+ * Se comprueba dentro de la misma transaccion y con el mismo cerrojo que el
+ * automatico: si no, dos personas eligiendo el mismo numero a la vez lo
+ * cogerian las dos. Y si ya esta usado se dice CUAL lo tiene, que es lo que
+ * hace falta para decidir --un numero repetido en una serie fiscal no es un
+ * aviso, es un problema--.
+ */
+export async function reservarNumero(client, projectId, issuerId, ano, serie, numero) {
+  const n = Number(numero);
+  if (!Number.isInteger(n) || n <= 0) {
+    throw new AppError('El número de factura tiene que ser un entero mayor que cero', 400, 'BAD_NUMBER');
+  }
+  await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`invoice_serie:${ano}:${serie}`]);
+  const { rows: [ocupado] } = await client.query(
+    `SELECT codigo, cliente_nombre, total, fecha_emision::date::text AS fecha
+       FROM invoices WHERE ano = $1 AND serie = $2 AND numero = $3 LIMIT 1`,
+    [ano, serie, n]
+  );
+  if (ocupado) {
+    throw new AppError(
+      `El número ${ano}/${String(n).padStart(4, '0')} ya lo tiene la factura de `
+      + `${ocupado.cliente_nombre || 'sin nombre'} (${Number(ocupado.total).toFixed(2)} €, ${ocupado.fecha}). `
+      + 'Elige otro.',
+      409, 'NUMBER_TAKEN');
+  }
+  // El contador solo sube: si se rellena un hueco anterior, no se baja, porque
+  // el siguiente automatico volveria a chocar con lo que ya existe.
+  await client.query(
+    `UPDATE invoice_sequences SET ultimo_numero = GREATEST(ultimo_numero, $1)
+      WHERE ano = $2 AND serie = $3`,
+    [n, ano, serie]
+  );
+  return n;
+}
+
 export async function nextNumero(client, projectId, issuerId, ano, serie) {
   // El numero es unico por SERIE Y AÑO, mire desde el proyecto que mire.
   //

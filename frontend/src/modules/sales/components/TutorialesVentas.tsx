@@ -1,3 +1,6 @@
+// El tipo de los propios iconos (como en MultiCRM): escrito a mano salía más estrecho
+// que el suyo y TypeScript lo rechazaba.
+import type { Icon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import {
   X, UsersThree, Tag, CalendarBlank, Buildings, Receipt, ChartBar, CaretRight,
@@ -19,7 +22,7 @@ interface Tutorial {
   id: string;
   titulo: string;
   resumen: string;
-  icono: React.ComponentType<{ size?: number; weight?: 'duotone' | 'bold'; className?: string }>;
+  icono: Icon;
   color: string;
   pasos: { que: string; detalle: string }[];
   ojo?: string;

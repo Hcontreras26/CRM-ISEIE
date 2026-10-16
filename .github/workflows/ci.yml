@@ -50,6 +50,12 @@ jobs:
       - run: npm ci
         working-directory: backend
 
+      # Las migraciones de ISEIE dan permisos a `crm_iseie_user`, el usuario de la app
+      # en el servidor. La base de la CI se crea con `crm_user` y ese rol no existía:
+      # la 052 fallaba («role "crm_iseie_user" does not exist») y la CI llevaba en rojo
+      # desde el 13/10. Se crea aquí, sin entrar, solo para que los GRANT tengan a quién.
+      - name: El rol de la app de ISEIE
+        run: PGPASSWORD=crm_local psql -h 127.0.0.1 -p 15432 -U crm_user -d crm_dev -c "DO \$\$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'crm_iseie_user') THEN CREATE ROLE crm_iseie_user NOLOGIN; END IF; END \$\$;"
       - name: Preparar la base con las migraciones
         run: npm run db:preparar -- --datos
         working-directory: backend
