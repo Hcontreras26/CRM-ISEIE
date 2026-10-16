@@ -77,6 +77,8 @@ const NovedadesPage = lazy(() => import('./modules/novedades/pages/NovedadesPage
 const NotificacionesPage = lazy(() => import('./modules/notificaciones/pages/NotificacionesPage'));
 const ActivityPage = lazy(() => import('./shared/pages/ActivityPage'));
 const StatusPage = lazy(() => import('./shared/pages/StatusPage'));
+// Sistema → Registro (#111), traído de MultiCRM (paridad, 15/10).
+const RegistroPage = lazy(() => import('./modules/registro/pages/RegistroPage'));
 
 // Módulos portados desde el hermano (paridad 2026-05-22).
 const RolesPage = lazy(() => import('./modules/permissions/pages/RolesPage'));
@@ -148,6 +150,7 @@ const ROUTE_TITLES = {
   '/configuracion/campos':            'Campos personalizados',
   '/roles':                           'Roles',
   '/status':                          'Status',
+  '/registro':                        'Registro',
   '/informes':                         'Reportes',
   '/notificaciones':                  'Notificaciones',
   '/activity':                        'Actividad',
@@ -306,6 +309,7 @@ function App() {
           <Route path="/notifications" element={<Navigate to="/notificaciones" replace />} />
           <Route path="/activity" element={<ActivityPage />} />
           <Route path="/status" element={<StatusPage />} />
+          <Route path="/registro" element={<RegistroPage />} />
           <Route path="/solicitudes-cambio" element={<ChangeRequestsPage />} />
           <Route path="/solicitudes-cambio/:id" element={<ChangeRequestDetailPage />} />
           <Route path="/perfil" element={<ProfilePage />} />

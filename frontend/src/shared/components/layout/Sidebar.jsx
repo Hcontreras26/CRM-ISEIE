@@ -9,7 +9,7 @@ import {
   ChatText,
   Receipt, Coins, Wrench, ShoppingBag, ChatCircleText, Wallet, Bank, Clock, GitMerge, CopySimple,
   UsersThree, CloudArrowDown,
-  GraduationCap, Warning, Certificate } from '@phosphor-icons/react';
+  GraduationCap, Warning, Certificate, ClipboardText } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { rolesDe } from '@/shared/lib/roles';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -205,6 +205,9 @@ export const NAV_SECTIONS = [
       { to: '/soporte',        label: 'Soporte',          icon: Headset },
       { to: '/manual',         label: 'Manual del CRM',   icon: BookOpen },
       { to: '/status',         label: 'Status',           icon: Pulse },
+      // El registro (#111), como en MultiCRM: quién hizo qué y, en «todos», los sucesos
+      // del sistema. Los mismos roles que exige el servidor.
+      { to: '/registro',       label: 'Registro',         icon: ClipboardText, roles: ['superadmin', 'admin'] },
     ],
   },
 ];

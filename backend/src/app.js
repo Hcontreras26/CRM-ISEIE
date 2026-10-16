@@ -56,6 +56,8 @@ import procesoModule from './modules/proceso/index.js';
 import feedbackModule from './modules/feedback/index.js';
 import novedadesModule from './modules/novedades/index.js';
 import certifexModule from './modules/certifex/index.js';
+// Sistema → Registro (#111), como en MultiCRM: quién hizo qué y los sucesos del sistema.
+import registroModule from './modules/registro/index.js';
 import mcpModule from './modules/mcp/index.js';
 import { startFeedbackDia7Scheduler } from './jobs/feedbackDia7Scheduler.js';
 import { startNovedadesScheduler } from './jobs/novedadesScheduler.js';
@@ -269,6 +271,8 @@ const MODULES = [
   convocatoriasModule,
   // Certifex: el CRM aprueba y Certifex emite (Matrículas → Certificaciones).
   certifexModule,
+  // Sistema → Registro (#111): solo lectura sobre lo que ya se apunta. Admin y superadmin.
+  registroModule,
   // Conexion de Claude por MCP: solo consulta, con token personal (como MultiCRM).
   mcpModule,
 ];
