@@ -164,6 +164,7 @@ const ROLE_BADGE = {
   admin: 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300',
   gestor: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300',
   soporte: 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300',
+  colaborador: 'bg-sky-100 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300',
 };
 
 function UsersSection({ isAdmin }) {
@@ -475,6 +476,8 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
               <option value="gestor">Gestor</option>
               <option value="admin">Admin</option>
               <option value="soporte">Soporte</option>
+              {/* Tablero de tareas (#210): equipo de desarrollo, solo ve sus Tareas. */}
+              <option value="colaborador">Colaborador</option>
             </select>
           </div>
           <div>
@@ -483,7 +486,7 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
                 clase no tiene que elegir. Solo SUMAN permisos; el principal
                 sigue siendo el de arriba. */}
             <div className="flex flex-wrap gap-1.5">
-              {['gestor', 'admin', 'soporte', 'tutor'].filter((r) => r !== role).map((r) => {
+              {['gestor', 'admin', 'soporte', 'tutor', 'colaborador'].filter((r) => r !== role).map((r) => {
                 const puesto = rolesExtra.includes(r);
                 return (
                   <button
@@ -494,7 +497,7 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
                     className={'rounded-md border px-2.5 py-1 text-xs transition-colors focus:outline-none focus:ring-2 focus:ring-primary/40 '
                       + (puesto ? 'border-primary bg-primary/10 font-semibold text-primary' : 'border-border hover:bg-muted')}
                   >
-                    {r === 'gestor' ? 'Gestor' : r === 'admin' ? 'Admin' : r === 'soporte' ? 'Soporte' : 'Tutor'}
+                    {r === 'gestor' ? 'Gestor' : r === 'admin' ? 'Admin' : r === 'soporte' ? 'Soporte' : r === 'colaborador' ? 'Colaborador' : 'Tutor'}
                   </button>
                 );
               })}
@@ -656,6 +659,7 @@ function InviteUserModal({ projects, onClose, onCreated, empresas, faltaMigracio
               <option value="gestor">Gestor — solo sus proyectos y leads</option>
               <option value="admin">Admin — acceso operativo completo</option>
               <option value="soporte">Soporte — tickets y consultas</option>
+              <option value="colaborador">Colaborador — solo su tablero de Tareas</option>
             </select>
           </div>
           <div>

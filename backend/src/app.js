@@ -24,6 +24,10 @@ import accountingModule from './modules/accounting/index.js';
 import integrationsModule from './modules/integrations/index.js';
 import stripePaymentsModule from './modules/stripe-payments/index.js';
 import invoicesModule from './modules/invoices/index.js';
+// Facturas de colaboradores (#202, como en MultiCRM): solo en pruebas hasta que
+// Diego lo apruebe con FACTURAS_COLABORADOR_EN_PRODUCCION=1.
+import facturasColaboradorModule from './modules/facturas-colaborador/index.js';
+import { startFacturasColaboradorScheduler } from './jobs/facturasColaboradorJob.js';
 import widgetModule from './modules/widget/index.js';
 import expensesModule from './modules/expenses/index.js';
 import accountsPayableModule from './modules/accounts-payable/index.js';
@@ -78,6 +82,11 @@ import { startResumenDiarioScheduler } from './jobs/resumenDiarioScheduler.js';
 import { startReporteSemanalScheduler } from './jobs/reporteSemanalScheduler.js';
 import { startMcpRotacionScheduler } from './jobs/mcpRotacionScheduler.js';
 import { startMcpVigilanciaScheduler } from './jobs/mcpVigilanciaScheduler.js';
+// Tablero de tareas del equipo (#210, paridad con MultiCRM): solo en pruebas.
+import tasksModule from './modules/tasks/index.js';
+import { startTasksDailySummaryScheduler } from './jobs/tasksDailySummaryJob.js';
+// Lo que aún no está aprobado para producción: el tablero (#210) y las facturas de colaboradores (#202).
+import { tareasActivas, facturasColaboradorActivas } from './shared/config/soloEnPruebas.js';
 
 const app = express();
 const PORT = process.env.PORT || 3005;
@@ -242,6 +251,9 @@ const MODULES = [
   integrationsModule,
   stripePaymentsModule,
   invoicesModule,
+  // Facturas de colaboradores (#202): la lista, el enlace del mes y «Mi factura».
+  // Solo en pruebas también en el servidor: en producción ni la API ni la tarea del mes.
+  ...(facturasColaboradorActivas() ? [facturasColaboradorModule] : []),
   widgetModule,
   expensesModule,
   accountsPayableModule,
@@ -279,7 +291,12 @@ const MODULES = [
   messagesModule,
   // Conexion de Claude por MCP: solo consulta, con token personal (como MultiCRM).
   mcpModule,
+  // El tablero aún no está aprobado para producción: solo en local y /staging.
+  ...(tareasActivas() ? [tasksModule] : []),
 ];
+if (!tareasActivas()) logger.info('Modulo SKIP (solo en pruebas): /api/tasks');
+
+if (!facturasColaboradorActivas()) logger.info('Modulo SKIP (solo en pruebas): /api/facturas-colaborador');
 
 for (const mod of MODULES) {
   app.use(mod.prefix, mod.router);
@@ -448,6 +465,14 @@ if (process.env.NODE_ENV !== 'test') {
         logger.error({ err }, 'MCP: la vigilancia de alertas falló al arrancar');
       }
     }
+    // Facturas de colaboradores (#202): el correo del mes y el recordatorio del día 5.
+    if (facturasColaboradorActivas()) {
+      try {
+        startFacturasColaboradorScheduler();
+      } catch (err) {
+        logger.error({ err }, 'Facturas de colaboradores: la tarea del mes falló al arrancar');
+      }
+    }
     // Los reintentos del webhook de transferencias (se apaga con WEBHOOKS_SALIENTES_DISABLED=1).
     try {
       startWebhooksSalientesScheduler();
@@ -456,6 +481,14 @@ if (process.env.NODE_ENV !== 'test') {
     }
     // Los adjuntos de WhatsApp que se quedaron a medias con el reinicio (como en MultiCRM).
     recuperarAdjuntosDeWhatsapp();
+    // El correo de cada mañana del tablero (se apaga con TAREAS_DIARIO_DISABLED=1).
+    if (tareasActivas()) {
+      try {
+        startTasksDailySummaryScheduler();
+      } catch (err) {
+        logger.error({ err }, 'Tareas: el correo de cada mañana falló al arrancar');
+      }
+    }
   });
 }
 

@@ -19,6 +19,8 @@ export const SYSTEM_ROLE_DEFAULTS = {
     'accounting.view': true, 'accounting.create': true, 'accounting.edit': true, 'accounting.delete': true,
     'accounts_payable.view': true, 'accounts_payable.create': true, 'accounts_payable.edit': true, 'accounts_payable.delete': true,
     'payroll.view': true, 'payroll.create': true, 'payroll.edit': true, 'payroll.delete': true,
+    // Facturas de colaboradores (#202): las de las empresas de sus campus. «Marcar pagada», solo un admin.
+    'facturas_colaborador.ver_todas': true, 'facturas_colaborador.gestionar': true, 'facturas_colaborador.anular': true, 'facturas_colaborador.pagar': true, 'facturas_colaborador.subir': false,
     'reports.view': true, 'reports.export': true,
     'ia.view': true,
     'woocommerce.view': true, 'woocommerce.sync': true,
@@ -30,6 +32,7 @@ export const SYSTEM_ROLE_DEFAULTS = {
     'field_defs.view': true, 'field_defs.edit': true,
     'channels.view': true, 'channels.edit': true,
     'roles.view': true, 'roles.edit': false,
+    'tasks.view_all': true, 'tasks.view_own': true, 'tasks.create': true, 'tasks.assign': true, 'tasks.edit': true, 'tasks.delete': true, 'tasks.close': true, 'tasks.manage': true,
   },
 
   gestor: {
@@ -52,6 +55,8 @@ export const SYSTEM_ROLE_DEFAULTS = {
     'accounting.view': false, 'accounting.create': false, 'accounting.edit': false, 'accounting.delete': false,
     'accounts_payable.view': false, 'accounts_payable.create': false, 'accounts_payable.edit': false, 'accounts_payable.delete': false,
     'payroll.view': false, 'payroll.create': true, 'payroll.edit': false, 'payroll.delete': false,
+    // Facturas de colaboradores (#202): no las ve.
+    'facturas_colaborador.ver_todas': false, 'facturas_colaborador.gestionar': false, 'facturas_colaborador.anular': false, 'facturas_colaborador.pagar': false, 'facturas_colaborador.subir': false,
     'reports.view': false, 'reports.export': false,
     'ia.view': false,
     'woocommerce.view': false, 'woocommerce.sync': false,
@@ -63,6 +68,8 @@ export const SYSTEM_ROLE_DEFAULTS = {
     'field_defs.view': false, 'field_defs.edit': false,
     'channels.view': true, 'channels.edit': false,
     'roles.view': false, 'roles.edit': false,
+    // Sin tablero (Diego, 09/10: «las gestoras no tienen tareas»): ni menú ni API.
+    'tasks.view_all': false, 'tasks.view_own': false, 'tasks.create': false, 'tasks.assign': false, 'tasks.edit': false, 'tasks.delete': false, 'tasks.close': false, 'tasks.manage': false,
   },
 
   soporte: {
@@ -77,6 +84,8 @@ export const SYSTEM_ROLE_DEFAULTS = {
     'accounting.view': false, 'accounting.create': false, 'accounting.edit': false, 'accounting.delete': false,
     'accounts_payable.view': false, 'accounts_payable.create': false, 'accounts_payable.edit': false, 'accounts_payable.delete': false,
     'payroll.view': false, 'payroll.create': false, 'payroll.edit': false, 'payroll.delete': false,
+    // Facturas de colaboradores (#202): no las ve.
+    'facturas_colaborador.ver_todas': false, 'facturas_colaborador.gestionar': false, 'facturas_colaborador.anular': false, 'facturas_colaborador.pagar': false, 'facturas_colaborador.subir': false,
     'reports.view': true, 'reports.export': false,
     'ia.view': true,
     'woocommerce.view': false, 'woocommerce.sync': false,
@@ -88,6 +97,16 @@ export const SYSTEM_ROLE_DEFAULTS = {
     'field_defs.view': false, 'field_defs.edit': false,
     'channels.view': true, 'channels.edit': false,
     'roles.view': false, 'roles.edit': false,
+    // Sin tablero (Diego, 09/10: «las gestoras no tienen tareas»): ni menú ni API.
+    'tasks.view_all': false, 'tasks.view_own': false, 'tasks.create': false, 'tasks.assign': false, 'tasks.edit': false, 'tasks.delete': false, 'tasks.close': false, 'tasks.manage': false,
+  },
+  // Colaborador (#210, fase 5): solo su tablero de tareas. Lo que no esta aqui
+  // es «no»: `resolvePermission` solo da por bueno un `true` explicito, y el
+  // servidor le corta el resto de rutas en `verifyToken`.
+  colaborador: {
+    'tasks.view_all': false, 'tasks.view_own': true, 'tasks.create': true, 'tasks.assign': false, 'tasks.edit': true, 'tasks.delete': false, 'tasks.close': false, 'tasks.manage': false,
+    // Facturas de colaboradores (#202): sube la suya («Mi factura»), y nada de administración.
+    'facturas_colaborador.ver_todas': false, 'facturas_colaborador.gestionar': false, 'facturas_colaborador.anular': false, 'facturas_colaborador.pagar': false, 'facturas_colaborador.subir': true,
   },
 };
 
@@ -102,6 +121,7 @@ export const ALL_RESOURCES = {
   accounting:       ['view', 'create', 'edit', 'delete'],
   accounts_payable: ['view', 'create', 'edit', 'delete'],
   payroll:          ['view', 'create', 'edit', 'delete'],
+  facturas_colaborador: ['ver_todas', 'gestionar', 'anular', 'pagar', 'subir'],
   reports:          ['view', 'export'],
   ia:               ['view'],
   woocommerce:      ['view', 'sync'],
@@ -113,4 +133,5 @@ export const ALL_RESOURCES = {
   field_defs:       ['view', 'edit'],
   channels:         ['view', 'edit'],
   roles:            ['view', 'edit'],
+  tasks:            ['view_all', 'view_own', 'create', 'assign', 'edit', 'delete', 'close', 'manage'],
 };

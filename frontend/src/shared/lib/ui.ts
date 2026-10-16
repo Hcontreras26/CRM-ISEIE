@@ -2,9 +2,9 @@
   Trozos de estilo que se repiten en los formularios.
 
   Nace con lo mínimo —la clase de un campo de texto— porque es lo que necesita
-  el diálogo del proceso comercial. En el CRM hermano este fichero tiene además
-  los colores e iniciales de los avatares; aquí eso ya vive en `color.ts`, así
-  que no se trae para no tener lo mismo en dos sitios.
+  el diálogo del proceso comercial. Los colores e iniciales de los avatares
+  llegaron con el tablero de tareas (#210), con el mismo nombre que en el CRM
+  hermano: `avatarColorFor` y `getInitials`, al final de este fichero.
 */
 
 export const inputClass =
@@ -30,3 +30,38 @@ export const EXPENSE_CATEGORY_COLORS = {
   comision_gestor: 'bg-teal-100 text-teal-800 dark:bg-teal-950/30 dark:text-teal-400',
   nomina: 'bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-300',
 } as const;
+
+/**
+ * La paleta de identidad: el color de un avatar (tablero de tareas, #210; la
+ * misma que en MultiCRM).
+ *
+ * Es una excepción a «todo con tokens», y a propósito: aquí no hay significado,
+ * hacen falta ocho matices que se distingan entre sí para reconocer a una
+ * persona de un vistazo. Con variante clara y oscura.
+ */
+export const AVATAR_COLORS: ReadonlyArray<string> = [
+  'bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300',
+  'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300',
+  'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300',
+  'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300',
+  'bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300',
+  'bg-teal-100 text-teal-700 dark:bg-teal-950/50 dark:text-teal-300',
+  'bg-orange-100 text-orange-700 dark:bg-orange-950/50 dark:text-orange-300',
+  'bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300',
+];
+
+/** Color estable para un avatar: el mismo id siempre pinta el mismo color. */
+export function avatarColorFor(id: number): string {
+  return AVATAR_COLORS[Math.abs(id) % AVATAR_COLORS.length];
+}
+
+export function getInitials(name: string | null | undefined): string {
+  if (!name) return '??';
+  return name
+    .trim()
+    .split(/\s+/)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}

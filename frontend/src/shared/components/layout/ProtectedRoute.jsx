@@ -1,6 +1,7 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { soloEsTutor } from '@/shared/lib/roles';
+import { soloEsTutor, soloEsColaborador } from '@/shared/lib/roles';
+import { SOLO_EN_PRUEBAS } from '@/shared/lib/enPruebas';
 
 // Dev-only bypass: si VITE_DEV_BYPASS_AUTH=true en .env.local, deja pasar sin login.
 // Solo para validar UI/menus en local sin backend. NUNCA activar en producción.
@@ -17,6 +18,15 @@ const RUTAS_DEL_TUTOR = ['/mis-cursos', '/preferencias', '/perfil', '/set-passwo
 
 function tutorPuede(pathname) {
   return RUTAS_DEL_TUTOR.some((p) => pathname === p || pathname.startsWith(p + '/'));
+}
+
+// Lo unico que abre un colaborador (#210, fase 5). El corte de verdad esta en
+// el servidor (`verifyToken`), que le responde 403 en todo lo demas.
+// «Mi factura» (#202): su factura del mes, y nada más de Finanzas.
+const RUTAS_DEL_COLABORADOR = ['/tareas', '/mi-factura', '/preferencias', '/perfil', '/set-password'];
+
+function colaboradorPuede(pathname) {
+  return RUTAS_DEL_COLABORADOR.some((p) => pathname === p || pathname.startsWith(p + '/'));
 }
 
 export default function ProtectedRoute({ children }) {
@@ -44,6 +54,13 @@ export default function ProtectedRoute({ children }) {
   // Solo si es tutor Y NADA MAS: con otro rol encima entra al CRM entero.
   if (soloEsTutor(user) && !tutorPuede(location.pathname)) {
     return <Navigate to="/mis-cursos" replace />;
+  }
+
+  // A su tablero. Mientras el tablero no esté aprobado para producción, /tareas
+  // lleva a la portada (App.jsx) y de aquí volvería a /tareas sin fin: allí va
+  // a sus preferencias.
+  if (soloEsColaborador(user) && !colaboradorPuede(location.pathname)) {
+    return <Navigate to={SOLO_EN_PRUEBAS ? '/tareas' : '/preferencias'} replace />;
   }
 
   return children;
