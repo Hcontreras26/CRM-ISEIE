@@ -21,3 +21,21 @@ export async function listCustomRoles(_projectId?: number): Promise<CustomRole[]
   const data = (res as any)?.data;
   return Array.isArray(data) ? data : [];
 }
+
+/**
+ * Los permisos de Tareas que se editan por rol (`admin`, `colaborador` o
+ * `custom:<id>`), como mandan ahora. Los cambian superadmin y admin (Diego,
+ * 08/10, #210; en ISEIE por paridad, 15/10).
+ */
+export async function getRolePermissions(roleKey: string): Promise<Record<string, boolean>> {
+  const res = await client.get(`/permissions/role-permissions/${roleKey}`);
+  return ((res?.data as { permissions?: Record<string, boolean> })?.permissions || {});
+}
+
+export async function saveRolePermissions(
+  roleKey: string,
+  permissions: Record<string, boolean>,
+): Promise<Record<string, boolean>> {
+  const res = await client.put(`/permissions/role-permissions/${roleKey}`, { permissions });
+  return ((res?.data as { permissions?: Record<string, boolean> })?.permissions || permissions);
+}

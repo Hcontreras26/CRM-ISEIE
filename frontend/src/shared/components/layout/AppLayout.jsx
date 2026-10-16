@@ -10,6 +10,8 @@ import PwaInstallPrompt from '@/shared/components/ui/PwaInstallPrompt';
 import ShortcutsFAB from '@/shared/components/ui/ShortcutsFAB';
 import SectionTabs from './SectionTabs';
 import BetaDisclaimer from '@/shared/components/ui/BetaDisclaimer';
+import { useAuth } from '@/contexts/AuthContext';
+import { soloEsColaborador } from '@/shared/lib/roles';
 // Avisa de un mensaje entrante desde cualquier pantalla. Antes de esto el CRM
 // no avisaba de nada cuando entraba un WhatsApp.
 const AvisoDeMensaje = lazy(() => import('./AvisoDeMensaje'));
@@ -17,6 +19,11 @@ const AvisoDeMensaje = lazy(() => import('./AvisoDeMensaje'));
 const COLLAPSED_KEY = 'crm.sidebar.collapsed';
 
 export default function AppLayout() {
+  const { user } = useAuth();
+  // Quien es solo colaborador (#210) no tiene WhatsApp: el servidor le responde
+  // 403, y el aviso de mensajes preguntaba cada pocos segundos (QA del 07/10 en
+  // MultiCRM).
+  const esSoloColaborador = soloEsColaborador(user);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(COLLAPSED_KEY) === '1'; } catch { return false; }
@@ -129,9 +136,11 @@ export default function AppLayout() {
           manda y no lo ve nadie. Estuvo asi hasta el 19/08 y por eso «guardar
           un prospecto no hacia nada» — el servidor devolvia el motivo del
           rechazo y la pantalla se lo callaba. */}
-      <Suspense fallback={null}>
-        <AvisoDeMensaje />
-      </Suspense>
+      {!esSoloColaborador && (
+        <Suspense fallback={null}>
+          <AvisoDeMensaje />
+        </Suspense>
+      )}
       <Toaster />
     </div>
   );

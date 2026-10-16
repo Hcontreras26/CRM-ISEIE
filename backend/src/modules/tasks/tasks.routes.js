@@ -1,0 +1,66 @@
+import { Router } from 'express';
+import { verifyToken, soloRoles } from '../../shared/middleware/auth.js';
+import { ROLES_TAREAS } from './tasks.model.js';
+import * as ctrl from './tasks.controller.js';
+
+const router = Router();
+
+router.use(verifyToken);
+router.use(soloRoles(...ROLES_TAREAS));
+
+// Rutas fijas antes que /:id, para no chocar
+router.get('/metrics', ctrl.teamMetrics);
+router.get('/metrics/areas', ctrl.teamMetricsByArea);
+router.get('/assignees', ctrl.assignees);
+router.get('/tags', ctrl.tagNames);
+
+// Vista por revisar
+router.get('/review', ctrl.reviewTasks);
+router.get('/review/count', ctrl.reviewCount);
+
+// Configuración de columnas
+router.get('/columns', ctrl.listColumns);
+router.post('/columns', ctrl.createColumn);
+router.patch('/columns/reorder', ctrl.reorderColumns);
+router.patch('/columns/:id', ctrl.updateColumn);
+router.delete('/columns/:id', ctrl.archiveColumn);
+
+// Configuración de áreas
+router.get('/areas', ctrl.listAreas);
+router.post('/areas', ctrl.createArea);
+router.get('/areas/assignments', ctrl.getUserAreaAssignments);
+router.get('/areas/user/:userId', ctrl.getUserAreas);
+router.put('/areas/user/:userId', ctrl.setUserAreas);
+router.patch('/areas/:id', ctrl.updateArea);
+router.put('/areas/:id/members', ctrl.setAreaMembers);
+
+// Configuración de proyectos propios
+router.get('/external-projects', ctrl.listExternalProjects);
+router.post('/external-projects', ctrl.createExternalProject);
+router.patch('/external-projects/:id', ctrl.updateExternalProject);
+
+// Tareas
+router.get('/', ctrl.list);
+router.post('/', ctrl.create);
+router.get('/:id', ctrl.getById);
+router.patch('/:id/move', ctrl.move);
+router.patch('/:id/return', ctrl.returnTask);
+router.patch('/:id/approve', ctrl.approve);
+router.patch('/:id', ctrl.update);
+router.delete('/:id', ctrl.archive);
+
+// Elementos de la tarjeta
+router.post('/:id/checklist', ctrl.addChecklistItem);
+router.patch('/:id/checklist/:itemId', ctrl.updateChecklistItem);
+router.delete('/:id/checklist/:itemId', ctrl.deleteChecklistItem);
+
+router.post('/:id/comments', ctrl.addComment);
+router.delete('/:id/comments/:commentId', ctrl.deleteComment);
+
+router.post('/:id/tags', ctrl.addTag);
+router.delete('/:id/tags/:tagId', ctrl.deleteTag);
+
+router.post('/:id/links', ctrl.addLink);
+router.delete('/:id/links/:linkId', ctrl.deleteLink);
+
+export default router;

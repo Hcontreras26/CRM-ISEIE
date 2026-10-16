@@ -28,7 +28,6 @@ import invoicesModule from './modules/invoices/index.js';
 // Diego lo apruebe con FACTURAS_COLABORADOR_EN_PRODUCCION=1.
 import facturasColaboradorModule from './modules/facturas-colaborador/index.js';
 import { startFacturasColaboradorScheduler } from './jobs/facturasColaboradorJob.js';
-import { facturasColaboradorActivas } from './shared/config/soloEnPruebas.js';
 import widgetModule from './modules/widget/index.js';
 import expensesModule from './modules/expenses/index.js';
 import accountsPayableModule from './modules/accounts-payable/index.js';
@@ -79,6 +78,11 @@ import { startResumenDiarioScheduler } from './jobs/resumenDiarioScheduler.js';
 import { startReporteSemanalScheduler } from './jobs/reporteSemanalScheduler.js';
 import { startMcpRotacionScheduler } from './jobs/mcpRotacionScheduler.js';
 import { startMcpVigilanciaScheduler } from './jobs/mcpVigilanciaScheduler.js';
+// Tablero de tareas del equipo (#210, paridad con MultiCRM): solo en pruebas.
+import tasksModule from './modules/tasks/index.js';
+import { startTasksDailySummaryScheduler } from './jobs/tasksDailySummaryJob.js';
+// Lo que aún no está aprobado para producción: el tablero (#210) y las facturas de colaboradores (#202).
+import { tareasActivas, facturasColaboradorActivas } from './shared/config/soloEnPruebas.js';
 
 const app = express();
 const PORT = process.env.PORT || 3005;
@@ -279,7 +283,10 @@ const MODULES = [
   certifexModule,
   // Conexion de Claude por MCP: solo consulta, con token personal (como MultiCRM).
   mcpModule,
+  // El tablero aún no está aprobado para producción: solo en local y /staging.
+  ...(tareasActivas() ? [tasksModule] : []),
 ];
+if (!tareasActivas()) logger.info('Modulo SKIP (solo en pruebas): /api/tasks');
 
 if (!facturasColaboradorActivas()) logger.info('Modulo SKIP (solo en pruebas): /api/facturas-colaborador');
 
@@ -396,6 +403,14 @@ if (process.env.NODE_ENV !== 'test') {
       startWebhooksSalientesScheduler();
     } catch (err) {
       logger.error({ err }, 'Webhook de transferencias: los reintentos fallaron al arrancar');
+    }
+    // El correo de cada mañana del tablero (se apaga con TAREAS_DIARIO_DISABLED=1).
+    if (tareasActivas()) {
+      try {
+        startTasksDailySummaryScheduler();
+      } catch (err) {
+        logger.error({ err }, 'Tareas: el correo de cada mañana falló al arrancar');
+      }
     }
   });
 }

@@ -1,6 +1,7 @@
--- 221 · Facturas de colaboradores (#202, primera PR). En MultiCRM es la 198 y
+-- 220 · Facturas de colaboradores (#202, primera PR). En MultiCRM es la 198 y
 -- el contenido es el mismo (paridad, Diego 15/10: «tienen que estar en ambos CRM
--- todas las cosas»). Va detrás de la 220, el rol colaborador en el ENUM.
+-- todas las cosas»). El rol colaborador en el ENUM user_role lo pone la 208 (la
+-- del tablero, #210): «Mi factura» y la ficha preguntan `role = 'colaborador'`.
 --
 -- La gente de fuera que factura al grupo cada mes —soporte, desarrollo,
 -- WordPress, SEO, contenido— sube su factura por un enlace personal, una por
@@ -12,7 +13,7 @@
 -- hora, por proyecto), el IVA y el IRPF y el pago van en la segunda PR, con su
 -- propia migración.
 --
--- En ISEIE la anterior es la 206; de la 207 a la 219 son las del tablero (#210).
+-- De la 207 a la 219 son las del tablero (#210); las de las facturas, de la 220.
 -- Se puede pasar dos veces sin romper nada.
 
 BEGIN;

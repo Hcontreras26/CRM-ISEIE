@@ -1,4 +1,4 @@
--- 222 · Facturas de colaboradores (#202, segunda PR): cómo cobra cada uno, y
+-- 221 · Facturas de colaboradores (#202, segunda PR): cómo cobra cada uno, y
 -- pagarlas. En MultiCRM es la 201; el contenido es el mismo (paridad, 15/10).
 --
 -- Del «Añadido 01/10 (tarde)» de la definición de Diego:
@@ -8,7 +8,7 @@
 --     o pagada con su fecha.
 -- Los nombres de las columnas son los de su esquema.
 --
--- Va detrás de la 221 (la primera PR de las facturas de colaboradores).
+-- Va detrás de la 220 (la primera PR de las facturas de colaboradores).
 -- Se puede pasar dos veces sin romper nada.
 
 BEGIN;

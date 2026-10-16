@@ -1,4 +1,4 @@
--- 223 · Facturas de colaboradores (#202): el total que pone el PDF. En MultiCRM
+-- 222 · Facturas de colaboradores (#202): el total que pone el PDF. En MultiCRM
 -- es la 202; el contenido es el mismo (paridad, 15/10).
 --
 -- Corrección de Diego (13/10): «el monto es que coincida el PDF y lo que se
@@ -11,7 +11,7 @@
 -- pudo leer (escaneado, roto, cifrado) o el archivo es una foto; entonces
 -- `cuadra` también es NULL, que es «No se pudo leer el PDF», no «No cuadra».
 --
--- Va detrás de la 222 (el desglose y el pago).
+-- Va detrás de la 221 (el desglose y el pago).
 -- Se puede pasar dos veces sin romper nada. No toca ninguna fila: las subidas
 -- de antes se quedan sin `importe_pdf` y con el `cuadra` que tenían.
 

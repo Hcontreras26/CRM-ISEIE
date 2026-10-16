@@ -164,6 +164,8 @@ const CONSULTAS = [
   // ── permisos (resolvePermission) ──
   [(s) => s.includes('FROM user_permission_overrides'), () => nada()],
   [(s) => s.includes('FROM custom_roles'), () => nada()],
+  // Lo cambiado en Configuración › Roles para cada rol (migración 211, la del tablero): nada.
+  [(s) => s.includes('FROM role_permission_overrides'), () => nada()],
 
   // ── la campana (notifications.service: notifyUsers) ──
   [(s) => s.includes('INSERT INTO admin_notifications'), (p) => {

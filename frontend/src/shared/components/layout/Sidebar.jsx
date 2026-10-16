@@ -9,9 +9,10 @@ import {
   ChatText,
   Receipt, Coins, Wrench, ShoppingBag, ChatCircleText, Wallet, Bank, Clock, GitMerge, CopySimple,
   UsersThree, CloudArrowDown,
-  GraduationCap, Warning } from '@phosphor-icons/react';
+  GraduationCap, Warning, Kanban, CheckSquare, SlidersHorizontal } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { rolesDe } from '@/shared/lib/roles';
+import usePermission from '@/shared/hooks/usePermission';
 import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/shared/lib/utils';
 import client from '@/shared/api/client';
@@ -19,7 +20,10 @@ import NotificationsBell from './NotificationsBell';
 import { isBetaAllowed, BETA_MODE } from '@/shared/config/betaConfig';
 import { PROCESO_EN_PRUEBAS, SOLO_EN_PRUEBAS } from '@/shared/lib/enPruebas';
 
-const ROLE_LABELS = { superadmin: 'Superadmin', admin: 'Admin', gestor: 'Gestor', soporte: 'Soporte', tutor: 'Tutor' };
+const ROLE_LABELS = { superadmin: 'Superadmin', admin: 'Admin', gestor: 'Gestor', soporte: 'Soporte', tutor: 'Tutor', colaborador: 'Colaborador' };
+
+// Quién tiene tablero de tareas: el mismo `ROLES_TAREAS` que el backend (#210).
+const ROLES_TAREAS = ['superadmin', 'admin', 'colaborador'];
 
 // NAV_SECTIONS: agrupaciones del sidebar. Las "secciones" (Prospectos,
 // Captación, Productos, Contabilidad) son ahora una sola entrada en el
@@ -83,6 +87,21 @@ export const NAV_SECTIONS = [
       { to: '/ventas',      label: 'Ventas',     icon: Receipt },
     ],
   },
+  // El tablero del equipo (#210, como en MultiCRM). Es lo único que ve quien es
+  // solo colaborador. «Por revisar» y «Configurar tablero» se enseñan por
+  // permiso (`permiso`), no por rol: lo que se cambie en Configuración › Roles
+  // manda también aquí. Toda la sección, solo en pruebas hasta que se apruebe.
+  ...(SOLO_EN_PRUEBAS ? [{
+    label: 'Equipo de Desarrollo',
+    items: [
+      { to: '/tareas', label: 'Tablero', icon: Kanban, roles: ROLES_TAREAS, end: true },
+      { to: '/tareas/revisar', label: 'Por revisar', icon: CheckSquare, roles: ROLES_TAREAS, permiso: 'tasks.close' },
+      { to: '/tareas/configurar', label: 'Configurar tablero', icon: SlidersHorizontal, roles: ROLES_TAREAS, permiso: 'tasks.manage' },
+      // «Mi factura» (#202): el colaborador con usuario sube aquí su factura del mes.
+      // Aquí, junto a su tablero, como en MultiCRM: es lo otro que ve un colaborador.
+      { to: '/mi-factura', label: 'Mi factura', icon: Receipt, roles: ['colaborador'] },
+    ],
+  }] : []),
   {
     label: 'Captación',
     items: [
@@ -149,8 +168,6 @@ export const NAV_SECTIONS = [
       { to: '/accounting/facturas', label: 'Facturación', icon: FilePdf, roles: ['admin', 'superadmin', 'soporte', 'gestor'], permiso: 'factura_manager', sectionPrefixes: ['/accounting/facturas'] },
       // Facturas de colaboradores (#202): en evaluación, solo en /staging y en local.
       ...(SOLO_EN_PRUEBAS ? [{ to: '/accounting/facturas-colaboradores', label: 'Facturas de colaboradores', icon: Receipt, roles: ['admin', 'superadmin'] }] : []),
-      // «Mi factura» (#202): el colaborador con usuario sube aquí su factura del mes.
-      ...(SOLO_EN_PRUEBAS ? [{ to: '/mi-factura', label: 'Mi factura', icon: Receipt, roles: ['colaborador'] }] : []),
       { to: '/accounting/integrations', label: 'Integraciones',   icon: PlugsConnected, roles: ['admin', 'superadmin'], statusTag: 'Pruebas' },
     ],
   },
@@ -200,7 +217,7 @@ export const NAV_SECTIONS = [
       { to: '/solicitudes-cambio', label: 'Solicitudes de cambio', icon: GitMerge },
       { to: '/notificaciones', label: 'Notificaciones',   icon: Bell },
       // El tutor entra aqui: es donde cambia su contraseña.
-      { to: '/preferencias',    label: 'Mis preferencias', icon: Sliders, roles: ['superadmin', 'admin', 'gestor', 'tutor'] },
+      { to: '/preferencias',    label: 'Mis preferencias', icon: Sliders, roles: ['superadmin', 'admin', 'gestor', 'tutor', 'colaborador'] },
       { to: '/soporte',        label: 'Soporte',          icon: Headset },
       { to: '/manual',         label: 'Manual del CRM',   icon: BookOpen },
       { to: '/status',         label: 'Status',           icon: Pulse },
@@ -224,7 +241,7 @@ const APAGADOS = String(import.meta.env.VITE_MODULOS_APAGADOS || '')
 // PRINCIPAL, como el servidor: un rol añadido no da el MCP.
 export function tieneAccesoMcp(role, permisos) {
   if (role === 'superadmin' || role === 'admin') return true;
-  if (role === 'tutor') return false;
+  if (role === 'tutor' || role === 'colaborador') return false;
   return permisos?.usa_mcp === true;
 }
 
@@ -241,6 +258,11 @@ function canSeeItem(item, role, soloColaboraciones, permisos) {
   // El recorte del tutor es para quien es SOLO tutor.
   if (roles.length === 1 && roles[0] === 'tutor') {
     return Array.isArray(item.roles) && item.roles.includes('tutor');
+  }
+  // Lo mismo para quien es SOLO colaborador (#210, fase 5): Tareas y sus
+  // preferencias. El servidor le responde 403 en todo lo demas.
+  if (roles.length > 0 && roles.every((r) => r === 'colaborador')) {
+    return Array.isArray(item.roles) && item.roles.includes('colaborador');
   }
   // Un gestor de colaboraciones se dedica SOLO a los tutores: no lleva
   // prospectos, ni ventas, ni finanzas. Se declara lo que puede ver, igual que
@@ -584,6 +606,16 @@ export default function Sidebar({ collapsed = false, onToggleCollapsed, onNaviga
 
   // Todos sus roles, no solo el principal: el menu suma lo de cada uno.
   const role = rolesDe(user).length ? rolesDe(user) : ['gestor'];
+  // Las entradas de Tareas con `permiso` se enseñan por la clave (`can`), que es
+  // lo que se cambia en Configuración › Roles, como en MultiCRM. Resuelto aquí,
+  // `canSeeItem` ya no mira esa clave en el usuario.
+  const { can } = usePermission();
+  const secciones = NAV_SECTIONS.map((sec) => ({
+    ...sec,
+    items: sec.items
+      .filter((it) => !it.permiso?.startsWith('tasks.') || can(it.permiso))
+      .map((it) => (it.permiso?.startsWith('tasks.') ? { ...it, permiso: undefined } : it)),
+  }));
   const initials = user?.nombre?.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2) || '??';
   // Quien lleva las colaboraciones no es una gestora: se la llama por su trabajo,
   // que es dar de alta profesores y ajustarles el porcentaje.
@@ -655,7 +687,7 @@ export default function Sidebar({ collapsed = false, onToggleCollapsed, onNaviga
           (más "Principal" siempre como ancla). El usuario puede plegar/expandir
           libremente con click en el header de sección. */}
       <CollapsibleNav
-        sections={NAV_SECTIONS}
+        sections={secciones}
         role={role}
         soloColab={user?.gestor_colaboraciones === true
           && !['superadmin', 'admin', 'soporte'].includes(role)}

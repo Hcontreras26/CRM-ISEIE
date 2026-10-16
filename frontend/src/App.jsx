@@ -114,6 +114,9 @@ const SeguimientoPage = lazy(() => import('./modules/proceso/pages/SeguimientoPa
 const ProcesoPage = lazy(() => import('./modules/proceso/pages/ProcesoPage'));
 // Las becas: las campañas, su embudo y a quién se le debe respuesta (#86).
 const ConvocatoriasPage = lazy(() => import('./modules/convocatorias/pages/ConvocatoriasPage'));
+// El tablero de tareas del equipo (#210, como en MultiCRM): solo en pruebas.
+const TasksPage = lazy(() => import('./modules/tasks/pages/TasksPage'));
+const TaskBoardConfigPage = lazy(() => import('./modules/tasks/pages/TaskBoardConfigPage'));
 
 const ROUTE_TITLES = {
   '/dashboard':                       'Dashboard',
@@ -153,6 +156,9 @@ const ROUTE_TITLES = {
   '/configuracion/categorias-arbol':  'Categorías',
   '/configuracion/campos':            'Campos personalizados',
   '/roles':                           'Roles',
+  '/tareas':                          'Tablero',
+  '/tareas/revisar':                  'Por revisar',
+  '/tareas/configurar':               'Configurar tablero',
   '/status':                          'Status',
   '/informes':                         'Reportes',
   '/notificaciones':                  'Notificaciones',
@@ -321,6 +327,10 @@ function App() {
           <Route path="/solicitudes-cambio/:id" element={<ChangeRequestDetailPage />} />
           <Route path="/perfil" element={<ProfilePage />} />
           <Route path="/configuracion" element={<SettingsPage />} />
+          {/* Equipo de Desarrollo (#210): sin aprobar para producción, solo en /staging. */}
+          <Route path="/tareas" element={SOLO_EN_PRUEBAS ? <TasksPage /> : <Navigate to="/" replace />} />
+          <Route path="/tareas/revisar" element={SOLO_EN_PRUEBAS ? <TasksPage /> : <Navigate to="/" replace />} />
+          <Route path="/tareas/configurar" element={SOLO_EN_PRUEBAS ? <TaskBoardConfigPage /> : <Navigate to="/" replace />} />
         </Route>
 
         {/* Entrada y catch-all */}

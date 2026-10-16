@@ -37,6 +37,8 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<UserRole, PermissionMap> = {
     'projects.read': true, 'projects.update': true,
     'campaigns.read': true,
     'accounting.read': true, 'accounting.update': true,
+    // Tablero de tareas (#210): las mismas claves que el backend.
+    'tasks.view_all': true, 'tasks.view_own': true, 'tasks.create': true, 'tasks.assign': true, 'tasks.edit': true, 'tasks.delete': true, 'tasks.close': true, 'tasks.manage': true,
     // Facturas de colaboradores (#202): las de las empresas de sus campus. Espejo del backend.
     'facturas_colaborador.ver_todas': true, 'facturas_colaborador.gestionar': true, 'facturas_colaborador.anular': true, 'facturas_colaborador.pagar': true,
   },
@@ -47,6 +49,13 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<UserRole, PermissionMap> = {
     'conversions.read': true, 'conversions.create': true,
     'matriculas.read': true,
     'reports.read': true,
+    // Sin tablero (Diego, 09/10: «las gestoras no tienen tareas»): ni menú ni API.
+  },
+  // Colaborador (#210, fase 5): solo su tablero de tareas. Espejo del backend.
+  colaborador: {
+    'tasks.view_all': false, 'tasks.view_own': true, 'tasks.create': true, 'tasks.assign': false, 'tasks.edit': true, 'tasks.delete': false, 'tasks.close': false, 'tasks.manage': false,
+    // Facturas de colaboradores (#202): sube la suya («Mi factura»).
+    'facturas_colaborador.subir': true,
   },
 };
 
@@ -61,6 +70,7 @@ export const PERMISSION_RESOURCES: ReadonlyArray<PermissionResource> = [
   { key: 'settings',    label: 'Configuración', actions: ['read', 'update'] },
   { key: 'campaigns',   label: 'Campañas',    actions: ['read'] },
   { key: 'accounting',  label: 'Contabilidad', actions: ['read', 'update'] },
+  { key: 'tasks',       label: 'Tareas',      actions: ['view_all', 'view_own', 'create', 'assign', 'edit', 'delete', 'close', 'manage'] },
   { key: 'facturas_colaborador', label: 'Facturas de colaboradores', actions: ['ver_todas', 'gestionar', 'anular', 'pagar', 'subir'] },
 ];
 

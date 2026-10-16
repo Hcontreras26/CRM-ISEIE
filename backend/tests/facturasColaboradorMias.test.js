@@ -114,3 +114,48 @@ describe('facturas de colaboradores (#202) · «Mi factura»', () => {
     expect((await request.get(`${API}/mias`).set(como('adminA'))).status).toBe(403);
   });
 });
+
+/*
+  El tablero (#210) limita a quien solo es colaborador a una lista de rutas
+  (`RUTAS_DEL_COLABORADOR`, comprobada en `verifyToken`): sin «Mi factura» en
+  ella, el colaborador recibiría 403 aunque tenga el permiso `subir`. Las de
+  arriba ya pasan por ese control (la API va con su `verifyToken` de verdad);
+  aquí se mira la lista y lo que queda fuera.
+*/
+describe('facturas de colaboradores (#202) · el colaborador entra en «Mi factura» (control del tablero)', () => {
+  it('sus tres rutas están en la lista; las de administración, no', async () => {
+    const { colaboradorPuede } = await import('../src/shared/utils/roles.js');
+    for (const ruta of [`${API}/mias`, `${API}/mias/7`, `${API}/mias/7/archivo`, `${API}/mias?x=1`]) {
+      expect(colaboradorPuede(ruta), ruta).toBe(true);
+    }
+    for (const ruta of [`${API}/colaboradores`, `${API}/mes`, `${API}/facturas`, `${API}/empresas`, `${API}/zip`, `${API}/miasx`]) {
+      expect(colaboradorPuede(ruta), ruta).toBe(false);
+    }
+  });
+
+  it('el corte lo hace `verifyToken` por la dirección: «Mi factura» pasa y lo de administración no', async () => {
+    const { verifyToken } = await import('../src/shared/middleware/auth.js');
+    const pasa = (originalUrl) => new Promise((resolve) => {
+      // Express deja las cabeceras en minúsculas.
+      const headers = { authorization: como('colaborador').Authorization };
+      verifyToken({ headers, originalUrl }, {}, (err) => resolve(err ? err.statusCode : 'sigue'));
+    });
+    expect(await pasa(`${API}/mias`)).toBe('sigue');
+    expect(await pasa(`${API}/mias/1/archivo`)).toBe('sigue');
+    expect(await pasa(`${API}/mes?periodo=2026-08`)).toBe(403);
+    expect(await pasa('/api/leads')).toBe(403);
+  });
+
+  it('el enlace público del correo no lleva sesión ni pasa por ese control: funciona igual con la sesión de un colaborador', async () => {
+    const { prepararMes: preparar } = await import('../src/modules/facturas-colaborador/facturas.service.js');
+    const id = ++base.datos.sec.colaborador;
+    base.datos.colaboradores.push({
+      id, nombre: 'Sin usuario', email: 'sin@test.local', area: 'seo', nif: null, notas: null, user_id: null,
+      activo: true, alta_desde: '2026-07-01', baja_desde: '2026-08-01', created_at: new Date(), updated_at: new Date(),
+    });
+    base.datos.ce.push({ colaborador_id: id, issuer_id: E.A, importe_acordado: 100 });
+    const [p] = await preparar('2026-07-01');
+    expect((await request.get(`${API}/enlace/${p.token}`)).status).toBe(200);
+    expect((await request.get(`${API}/enlace/${p.token}`).set(como('colaborador'))).status).toBe(200);
+  });
+});
