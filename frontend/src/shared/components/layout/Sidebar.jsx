@@ -97,6 +97,9 @@ export const NAV_SECTIONS = [
       { to: '/tareas', label: 'Tablero', icon: Kanban, roles: ROLES_TAREAS, end: true },
       { to: '/tareas/revisar', label: 'Por revisar', icon: CheckSquare, roles: ROLES_TAREAS, permiso: 'tasks.close' },
       { to: '/tareas/configurar', label: 'Configurar tablero', icon: SlidersHorizontal, roles: ROLES_TAREAS, permiso: 'tasks.manage' },
+      // «Mi factura» (#202): el colaborador con usuario sube aquí su factura del mes.
+      // Aquí, junto a su tablero, como en MultiCRM: es lo otro que ve un colaborador.
+      { to: '/mi-factura', label: 'Mi factura', icon: Receipt, roles: ['colaborador'] },
     ],
   }] : []),
   {
@@ -163,6 +166,8 @@ export const NAV_SECTIONS = [
       { to: '/accounting/pendiente-facturar', label: 'Pendientes de facturar', icon: WarningCircle, roles: ['admin', 'superadmin'], statusTag: 'Pruebas' },
       { to: '/accounting/pagos-stripe', label: 'Pagos Stripe',    icon: PlugsConnected, roles: ['admin', 'superadmin'] },
       { to: '/accounting/facturas', label: 'Facturación', icon: FilePdf, roles: ['admin', 'superadmin', 'soporte', 'gestor'], permiso: 'factura_manager', sectionPrefixes: ['/accounting/facturas'] },
+      // Facturas de colaboradores (#202): en evaluación, solo en /staging y en local.
+      ...(SOLO_EN_PRUEBAS ? [{ to: '/accounting/facturas-colaboradores', label: 'Facturas de colaboradores', icon: Receipt, roles: ['admin', 'superadmin'] }] : []),
       { to: '/accounting/integrations', label: 'Integraciones',   icon: PlugsConnected, roles: ['admin', 'superadmin'], statusTag: 'Pruebas' },
     ],
   },
