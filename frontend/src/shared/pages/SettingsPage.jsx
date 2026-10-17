@@ -564,8 +564,8 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
           <Field label="Cambiar contraseña" htmlFor="editar-usuario-pass" className="border-t border-border pt-4"
             hint="Mínimo 8 caracteres, con una mayúscula y un número. Se la comunicas tú al usuario. Al cambiarla, se cierran sus sesiones activas.">
             <div className="flex flex-col gap-2 sm:flex-row">
-              <input id="editar-usuario-pass" type="text" value={newPass} onChange={(e) => setNewPass(e.target.value)} placeholder="Nueva contraseña" autoComplete="new-password" className={`${inputClass} flex-1 min-w-0 font-mono`} />
-              <input type="text" value={newPass2} onChange={(e) => setNewPass2(e.target.value)} placeholder="Repítela" aria-label="Repite la contraseña" autoComplete="new-password" className={`${inputClass} flex-1 min-w-0 font-mono`} />
+              <input id="editar-usuario-pass" type="text" value={newPass} onChange={(e) => setNewPass(e.target.value)} placeholder="Nueva contraseña" autoComplete="new-password" className={`${inputClass} min-w-0 sm:flex-1 font-mono`} />
+              <input type="text" value={newPass2} onChange={(e) => setNewPass2(e.target.value)} placeholder="Repítela" aria-label="Repite la contraseña" autoComplete="new-password" className={`${inputClass} min-w-0 sm:flex-1 font-mono`} />
               <button onClick={changePassword} disabled={savingPass || !newPass || !newPass2} className="h-9 px-3 rounded-md border border-border text-sm font-medium hover:bg-muted disabled:opacity-50 whitespace-nowrap">
                 {savingPass ? '…' : 'Cambiar'}
               </button>

@@ -879,8 +879,9 @@ export default function TutoresPage() {
                 {/* En el móvil no caben cuatro columnas: el curso va arriba, el
                     porcentaje y la fecha debajo, y «Añadir» a lo ancho (#106). */}
                 <div className="grid grid-cols-2 sm:grid-cols-[minmax(0,1fr)_5rem_9.5rem_auto] gap-fila items-end">
-                  <Field label="Curso" className="col-span-2 sm:col-span-1">
+                  <Field label="Curso" htmlFor="alta-curso" className="col-span-2 sm:col-span-1">
                     <BuscadorCurso
+                      id="alta-curso"
                       cursos={formaciones}
                       valor={nuevoCurso ? Number(nuevoCurso) : null}
                       onElegir={(id) => setNuevoCurso(id ? String(id) : '')}
