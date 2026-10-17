@@ -492,7 +492,9 @@ export default function ConversionDialog({ open, onClose, lead, projectId, onCre
               <button type="button" onClick={finishAndClose} className="text-xs text-muted-foreground hover:underline">Ahora no</button>
             </div>
           ) : (
-          <form onSubmit={handleSubmit} className="space-y-3">
+          // noValidate: los avisos los da el CRM (handleSubmit), que dicen qué
+          // falta y dónde; el globo del navegador se adelantaba (#106).
+          <form onSubmit={handleSubmit} noValidate className="space-y-3">
             {/* MODO 1: Producto único (legacy) */}
             {!useMultiItem && (
               <div>
@@ -508,7 +510,9 @@ export default function ConversionDialog({ open, onClose, lead, projectId, onCre
                   <div className="space-y-1.5">
                     {products.length > 0 ? (
                       <Select<string>
-                        value={form.producto_contratado}
+                        // Un nombre escrito a mano no está en el catálogo: el
+                        // desplegable vuelve a «Seleccionar…» en vez de quedarse en blanco.
+                        value={products.some(p => p.nombre === form.producto_contratado) ? form.producto_contratado : ''}
                         onChange={(v) => update('producto_contratado', v)}
                         options={[
                           { value: '', label: 'Seleccionar o escribir abajo' },
@@ -517,9 +521,10 @@ export default function ConversionDialog({ open, onClose, lead, projectId, onCre
                         ariaLabel="Producto contratado"
                       />
                     ) : null}
+                    {/* Sin datalist: el catálogo ya está en el desplegable de arriba,
+                        y la lista del navegador lo duplicaba con otro estilo (#106). */}
                     <input
                       id="venta-producto-contratado"
-                      list={products.length > 0 ? 'conversion-products-list' : undefined}
                       value={form.producto_contratado}
                       onChange={e => update('producto_contratado', e.target.value)}
                       placeholder={products.length > 0 ? 'Escribe o selecciona del listado' : 'Nombre del producto/curso'}
@@ -530,11 +535,6 @@ export default function ConversionDialog({ open, onClose, lead, projectId, onCre
                     />
                   </div>
                 </Field>
-                {products.length > 0 && (
-                  <datalist id="conversion-products-list">
-                    {products.map(p => <option key={p.id} value={p.nombre} />)}
-                  </datalist>
-                )}
               </div>
             )}
 
