@@ -78,6 +78,44 @@ describe('Nueva venta (#106)', () => {
     expect(container.querySelector('input[type="number"][required]')).not.toBeNull();
   });
 
+  // Visto en la prueba a mano: se registraba a uno, se cerraba, y al abrir el
+  // de otro ya estaban puestos el producto y el precio del anterior.
+  describe('cada apertura empieza vacía', () => {
+    const precio = (c) => c.querySelector('input[type="number"][required]');
+    const rellenar = (c) => {
+      fireEvent.change(c.querySelector('#venta-producto-contratado'), { target: { value: 'Curso prueba' } });
+      fireEvent.change(precio(c), { target: { value: '500' } });
+      fireEvent.click(screen.getByRole('button', { name: /^Parcial$/i }));
+    };
+
+    it('al abrirlo para otro prospecto no trae lo escrito para el anterior', () => {
+      const props = { onClose: vi.fn(), projectId: 1 };
+      const { container, rerender } = render(<ConversionDialog open lead={{ id: 1, nombre: 'Sergio' }} {...props} />);
+      rellenar(container);
+      rerender(<ConversionDialog open={false} lead={null} {...props} />);
+      rerender(<ConversionDialog open lead={{ id: 2, nombre: 'Claudia' }} {...props} />);
+      expect(screen.getByText(/Lead: Claudia/)).toBeInTheDocument();
+      expect(container.querySelector('#venta-producto-contratado')).toHaveValue('');
+      expect(precio(container)).toHaveValue(null);
+      expect(container.querySelector('input[placeholder*="pagó"]')).toBeNull();
+    });
+
+    it('tampoco al cerrarlo sin registrar y volver a abrir el mismo', () => {
+      const props = { onClose: vi.fn(), projectId: 1, lead };
+      const { container, rerender } = render(<ConversionDialog open {...props} />);
+      rellenar(container);
+      rerender(<ConversionDialog open={false} {...props} />);
+      rerender(<ConversionDialog open {...props} />);
+      expect(container.querySelector('#venta-producto-contratado')).toHaveValue('');
+      expect(precio(container)).toHaveValue(null);
+    });
+
+    it('si el prospecto trae su producto de interés, sigue saliendo puesto', () => {
+      const { container } = render(<ConversionDialog open onClose={vi.fn()} projectId={1} lead={{ id: 3, nombre: 'Eva', producto_nombre: 'Taller Logopedia' }} />);
+      expect(container.querySelector('#venta-producto-contratado')).toHaveValue('Taller Logopedia');
+    });
+  });
+
   describe('con catálogo: un solo desplegable', () => {
     beforeEach(() => { catalogo.products = [{ id: 1, nombre: 'Curso Dislexia', payment_links: null }]; });
 
