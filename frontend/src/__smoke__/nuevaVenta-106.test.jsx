@@ -19,6 +19,14 @@ vi.mock('@/shared/hooks/useToast', () => ({ toast: api.toast }));
 
 import ConversionDialog from '@/modules/conversions/components/ConversionDialog';
 
+// Las etiquetas de Field (#106) que no apuntan a ningún campo. Las de grupo
+// (varios controles juntos, como «IVA» o «Pago recibido hoy») no tienen a
+// cuál apuntar y se dicen aparte.
+const etiquetasSueltas = (raiz, deGrupo = []) => [...raiz.querySelectorAll('label.mb-1\\.5.block.px-1')]
+  .filter((l) => !deGrupo.some((g) => l.textContent.startsWith(g)))
+  .filter((l) => !l.htmlFor || !raiz.ownerDocument.getElementById(l.htmlFor))
+  .map((l) => l.textContent);
+
 const lead = { id: 99, nombre: 'Ana Test' };
 const abrir = () => render(<ConversionDialog open onClose={vi.fn()} lead={lead} projectId={1} />);
 
@@ -53,5 +61,10 @@ describe('Nueva venta (#106)', () => {
   it('el obligatorio se anuncia como tal (Field compartido)', () => {
     abrir();
     expect(screen.getAllByText('(obligatorio)').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('cada etiqueta enlazada a su campo, salvo las de grupo (#106)', () => {
+    const { container } = render(<ConversionDialog open onClose={vi.fn()} lead={lead} projectId={1} />);
+    expect(etiquetasSueltas(container, ['IVA', 'Pago recibido hoy'])).toEqual([]);
   });
 });

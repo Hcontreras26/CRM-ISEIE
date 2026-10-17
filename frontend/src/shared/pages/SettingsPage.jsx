@@ -471,8 +471,9 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
               </label>
             ))}
           </div>
-          <Field label="Rol" required>
+          <Field label="Rol" required htmlFor="editar-usuario-rol">
             <Select
+              id="editar-usuario-rol"
               value={role}
               onChange={setRole}
               ariaLabel="Rol"
@@ -648,8 +649,9 @@ function InviteUserModal({ projects, onClose, onCreated, empresas, faltaMigracio
           <Field label="Email" required htmlFor="invitar-email">
             <input id="invitar-email" value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputClass} placeholder="persona@empresa.com" />
           </Field>
-          <Field label="Rol" required>
+          <Field label="Rol" required htmlFor="invitar-rol">
             <Select
+              id="invitar-rol"
               value={role}
               onChange={setRole}
               ariaLabel="Rol"
@@ -719,7 +721,7 @@ function AvailabilitySection() {
       toast({ title: value ? 'Gestor disponible' : 'Gestor pausado', description: user.nombre });
       await load();
     } catch (err) {
-      toast({ title: 'No se pudo cambiar la disponibilidad', description: err?.message, variant: 'destructive' });
+      toast({ title: 'Error', description: err?.message, variant: 'destructive' });
     }
   }
 
@@ -832,15 +834,15 @@ function AvailabilitySection() {
                   <div className="bg-muted/30 px-4 py-3 space-y-3">
                     <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1.5fr_auto] gap-2 items-end">
                       <div>
-                        <label className="mb-1.5 block px-1 text-secundario uppercase tracking-wider font-bold text-muted-foreground">Desde</label>
+                        <label className="block text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Desde</label>
                         <input type="date" value={newBlock.fecha_inicio} onChange={(e) => setNewBlock({ ...newBlock, fecha_inicio: e.target.value })} className="w-full h-8 px-2 rounded-md border border-border bg-card text-xs" />
                       </div>
                       <div>
-                        <label className="mb-1.5 block px-1 text-secundario uppercase tracking-wider font-bold text-muted-foreground">Hasta</label>
+                        <label className="block text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Hasta</label>
                         <input type="date" value={newBlock.fecha_fin} onChange={(e) => setNewBlock({ ...newBlock, fecha_fin: e.target.value })} className="w-full h-8 px-2 rounded-md border border-border bg-card text-xs" />
                       </div>
                       <div>
-                        <label className="mb-1.5 block px-1 text-secundario uppercase tracking-wider font-bold text-muted-foreground">Motivo</label>
+                        <label className="block text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Motivo</label>
                         <input type="text" value={newBlock.motivo} onChange={(e) => setNewBlock({ ...newBlock, motivo: e.target.value })} placeholder="Vacaciones, baja, formación…" className="w-full h-8 px-2 rounded-md border border-border bg-card text-xs" />
                       </div>
                       <button onClick={() => addBlock(u.id)} className="h-8 px-3 rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90">+ Añadir</button>
@@ -1030,7 +1032,7 @@ function IntegrationsSection({ isAdmin }) {
                 <X size={16} weight="bold" />
               </button>
             </div>
-            <label className="mb-1.5 block px-1 text-secundario font-bold uppercase tracking-wider text-muted-foreground">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
               {editing.label}
             </label>
             <input

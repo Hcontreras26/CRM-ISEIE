@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
+import { inputClass } from '@/shared/lib/ui';
 import { MagnifyingGlass, Plus, X, CaretDown } from '@phosphor-icons/react';
 import Portal from '@/shared/components/ui/portal';
 import Select from '@/shared/components/ui/Select';
 import client from '@/shared/api/client';
 import { toast } from '@/shared/hooks/useToast';
 
-const inputClass = 'w-full h-9 px-3 rounded-md border border-border bg-muted/50 text-sm outline-none focus:border-primary';
 
 interface ProductOption {
   id: number;
@@ -20,9 +20,11 @@ interface Props {
   projectId: number | null | undefined;
   projectLabel?: string;
   onProductCreated?: (p: ProductOption) => void;
+  /** El `id` del botón, para que la etiqueta de un `Field` (`htmlFor`) lo enfoque. */
+  id?: string;
 }
 
-export default function ProductCombobox({ value, onChange, products, projectId, projectLabel = 'Producto', onProductCreated }: Props) {
+export default function ProductCombobox({ value, onChange, products, projectId, projectLabel = 'Producto', onProductCreated, id }: Props) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [newOpen, setNewOpen] = useState(false);
@@ -45,8 +47,10 @@ export default function ProductCombobox({ value, onChange, products, projectId, 
   return (
     <div className="relative" ref={ref}>
       <button
+        id={id}
         type="button"
         onClick={() => setOpen(!open)}
+        aria-expanded={open ? 'true' : 'false'}
         className={inputClass + ' flex items-center justify-between text-left'}
       >
         <span className={selected ? '' : 'text-muted-foreground'}>

@@ -286,7 +286,7 @@ export default function FieldDefinitionsPage() {
         <ConfirmDialog
           open={!!deleteTarget}
           title="Eliminar campo"
-          message={`Eliminar el campo "${deleteTarget?.label}"? Los valores existentes en los registros NO se borraran, pero el campo dejara de aparecer en formularios.`}
+          message={`¿Eliminar el campo "${deleteTarget?.label}"? Los valores existentes en los registros NO se borrarán, pero el campo dejará de aparecer en formularios.`}
           confirmLabel="Eliminar"
           tone="destructive"
           onConfirm={confirmDelete}
@@ -354,8 +354,9 @@ function FieldEditorDialog({ field, onChange, onSave, onClose, isEdit }: FieldEd
             </Field>
           )}
 
-          <Field label="Tipo">
+          <Field label="Tipo" htmlFor="campo-tipo">
             <Select<FieldType>
+              id="campo-tipo"
               value={field.type}
               onChange={(v) => patch({ type: v, options: v === 'select' ? (field.options || { choices: [] }) : null })}
               options={TYPES.map((t) => ({ value: t.v, label: t.label }))}

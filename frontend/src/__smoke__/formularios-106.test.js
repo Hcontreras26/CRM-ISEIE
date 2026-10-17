@@ -38,6 +38,23 @@ const TODOS = ficheros(SRC).map((ruta) => ({
   texto: readFileSync(ruta, 'utf8'),
 }));
 
+// De Configuración, solo cuentan los dos diálogos de usuario, que son el
+// formulario «Usuario» de la lista. Disponibilidad e Integraciones viven en el
+// mismo fichero pero no son de la #106.
+function delFormulario({ ruta, texto }) {
+  if (ruta !== 'src/shared/pages/SettingsPage.jsx') return texto;
+  const ini = texto.indexOf('function EditUserModal');
+  const fin = texto.indexOf('function AvailabilitySection');
+  if (ini < 0 || fin < 0) throw new Error('SettingsPage.jsx: no están los diálogos de usuario');
+  return texto.slice(ini, fin);
+}
+
+// La lista de pendientes solo puede encoger: cada uno tiene que seguir teniendo
+// su copia. Si alguien la quita, que lo quite también de aquí.
+function sigueTeniendoCopia(PENDIENTES, patron) {
+  return PENDIENTES.filter((r) => !patron.test(TODOS.find((x) => x.ruta === r)?.texto || ''));
+}
+
 describe('formato de los formularios (#106)', () => {
   it('la clase del campo se define en un solo sitio', () => {
     // `export { inputClass } from …` es un reenvío, no otra definición.
@@ -49,18 +66,13 @@ describe('formato de los formularios (#106)', () => {
     const PENDIENTES = [
       'src/modules/accounting/components/PayableDialog.tsx',
       'src/modules/accounting/components/PaymentDialog.tsx',
-      'src/modules/accounting/pages/ExpensesPage.tsx',
       'src/modules/accounts-payable/components/PayableDialog.tsx',
       'src/modules/accounts-payable/components/PaymentDialog.tsx',
       'src/modules/commissions/components/RulesDialog.tsx',
-      'src/modules/conversions/components/ConversionDialog.tsx',
       'src/modules/conversions/components/PaymentDialog.tsx',
-      'src/modules/expenses/pages/ExpensesPage.tsx',
-      'src/modules/field-definitions/components/CustomFieldRenderer.tsx',
-      'src/modules/leads/components/lead-detail/InfoField.tsx',
-      'src/modules/leads/components/ProductCombobox.tsx',
     ];
     expect(definen.filter((r) => !PENDIENTES.includes(r))).toEqual(['src/shared/lib/ui.ts']);
+    expect(sigueTeniendoCopia(PENDIENTES, /^\s*(?:export\s+)?(?:const|let)\s+inputClass\s*=/m)).toEqual([]);
   });
 
   it('el envoltorio del campo se define en un solo sitio', () => {
@@ -70,12 +82,9 @@ describe('formato de los formularios (#106)', () => {
     // Igual que arriba: las copias que quedan en ISEIE, y que no salga ninguna más.
     const PENDIENTES = [
       'src/modules/change-requests/pages/ChangeRequestDetailPage.tsx',
-      'src/modules/invoices/components/FiscalDataDialog.tsx',
-      'src/modules/invoices/pages/InvoiceCreatePage.tsx',
-      'src/modules/leads/components/LeadFormDialog.tsx',
-      'src/modules/products/components/ProductFormDialog.tsx',
     ];
     expect(definen.filter((r) => !PENDIENTES.includes(r))).toEqual(['src/shared/components/ui/Field.tsx']);
+    expect(sigueTeniendoCopia(PENDIENTES, /^\s*(?:export\s+default\s+)?function\s+Field\s*\(/m)).toEqual([]);
   });
 
   it('los formularios que pedía Diego no tienen etiquetas sueltas', () => {
@@ -101,7 +110,7 @@ describe('formato de los formularios (#106)', () => {
     for (const ruta of NOMBRADOS) {
       const f = TODOS.find((x) => x.ruta === ruta);
       if (!f) { sueltas.push(`${ruta}: no existe`); continue; }
-      for (const m of f.texto.matchAll(/<label className="([^"{}]+)"/g)) {
+      for (const m of delFormulario(f).matchAll(/<label className="([^"{}]+)"/g)) {
         const clases = m[1].split(/\s+/);
         // Las que envuelven una casilla llevan `flex` y no son etiquetas de campo.
         if (clases.includes('flex') || clases.includes('inline-flex')) continue;
@@ -131,7 +140,7 @@ describe('formato de los formularios (#106)', () => {
   const deLaLista = () => DE_LA_LISTA.map((ruta) => {
     const f = TODOS.find((x) => x.ruta === ruta);
     if (!f) throw new Error(`${ruta}: no existe`);
-    return f;
+    return { ruta, texto: delFormulario(f) };
   });
   const lineas = (texto) => texto.split(/\r?\n/);
 
