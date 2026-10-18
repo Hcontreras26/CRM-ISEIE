@@ -52,10 +52,22 @@ describe('Tutor (#106)', () => {
   it('nuevo tutor: cada campo con el Field común, enlazado, y con la clase común', async () => {
     await abrirPagina();
     fireEvent.click(screen.getByRole('button', { name: /Nuevo tutor/ }));
-    for (const nombre of [/^Nombre y apellidos/, /^Correo/, 'DNI / NIF', 'Teléfono', 'IBAN', 'Contraseña', '%', 'Lo lleva desde']) {
+    for (const nombre of [/^Nombre y apellidos/, /^Correo/, 'DNI / NIF', 'Teléfono', 'IBAN', /^Contraseña/, '%', 'Lo lleva desde']) {
       expect(screen.getByLabelText(nombre).className).toMatch(/bg-muted\/50/);
     }
     expect(screen.getAllByText('(obligatorio)').length).toBeGreaterThanOrEqual(2);
+  });
+
+  // Visto en la prueba a mano: la contraseña no tenía etiqueta, solo el título
+  // «Cómo entra» y el texto gris de ejemplo. Ahora es un campo como los demás.
+  it('nuevo tutor: la contraseña con su etiqueta y la ayuda debajo, sin «Cómo entra»', async () => {
+    await abrirPagina();
+    fireEvent.click(screen.getByRole('button', { name: /Nuevo tutor/ }));
+    const clave = screen.getByLabelText(/^Contraseña/);
+    expect(clave.id).toBe('alta-clave');
+    expect(document.querySelector('label[for="alta-clave"]').textContent).toMatch(/^Contraseña/);
+    expect(clave.closest('div.min-w-0').textContent).toMatch(/Cópiala|correo|Con contraseña/);
+    expect(screen.queryByText('Cómo entra')).toBeNull();
   });
 
   it('nuevo tutor: la fila de «Sus cursos» se apila en el móvil', async () => {
@@ -102,12 +114,12 @@ describe('Tutor: avisa el CRM, no el navegador (#106)', () => {
     const nombre = screen.getByLabelText(/^Nombre y apellidos/);
     expect(nombre.closest('form').noValidate).toBe(true);
     // Todo vacío: todo lo que falta, en un solo aviso (#106).
-    escribir(screen.getByLabelText('Contraseña'), '');
+    escribir(screen.getByLabelText(/^Contraseña/), '');
     await enviar(nombre);
     aviso('Faltan datos');
     expect(lista()).toBe('Falta el nombre en «Nombre y apellidos», el correo en «Correo» y la contraseña (escríbela o pulsa «Generar»).');
     // Si solo falta una cosa, su aviso de siempre.
-    escribir(screen.getByLabelText('Contraseña'), 'larga-de-sobra');
+    escribir(screen.getByLabelText(/^Contraseña/), 'larga-de-sobra');
     escribir(screen.getByLabelText(/^Correo/), 'ana@prueba.local');
     await enviar(nombre);
     aviso('Falta el nombre');
@@ -119,7 +131,7 @@ describe('Tutor: avisa el CRM, no el navegador (#106)', () => {
     await enviar(nombre);
     aviso('Correo no válido');
     // Lo mal escrito también va en la misma lista.
-    escribir(screen.getByLabelText('Contraseña'), 'corta');
+    escribir(screen.getByLabelText(/^Contraseña/), 'corta');
     escribir(screen.getByLabelText('%'), '150');
     await enviar(nombre);
     aviso('Faltan datos');
@@ -127,13 +139,13 @@ describe('Tutor: avisa el CRM, no el navegador (#106)', () => {
     escribir(screen.getByLabelText('%'), '');
     escribir(screen.getByLabelText(/^Correo/), 'ana@prueba.local');
     // Sin correos a tutores, la contraseña es obligatoria (required={sinCorreos}).
-    escribir(screen.getByLabelText('Contraseña'), '');
+    escribir(screen.getByLabelText(/^Contraseña/), '');
     await enviar(nombre);
     aviso('Falta la contraseña');
-    escribir(screen.getByLabelText('Contraseña'), 'corta');
+    escribir(screen.getByLabelText(/^Contraseña/), 'corta');
     await enviar(nombre);
     aviso('Contraseña demasiado corta');
-    escribir(screen.getByLabelText('Contraseña'), 'larga-de-sobra');
+    escribir(screen.getByLabelText(/^Contraseña/), 'larga-de-sobra');
     for (const malo of ['150', '-1', '7.3']) {
       escribir(screen.getByLabelText('%'), malo);
       await enviar(nombre);
