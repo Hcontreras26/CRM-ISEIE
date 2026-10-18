@@ -104,6 +104,31 @@ describe('Nuevo prospecto (#106)', () => {
     expect(onSubmit.mock.calls[0][0].custom_fields).toEqual({ dni: '12345678Z' });
   });
 
+  // Al cerrar y volver a abrir, el aviso de la vez anterior no se arrastra.
+  it('al volver a abrir, no sale el aviso de un personalizado de la vez anterior', async () => {
+    const client = (await import('@/shared/api/client')).default;
+    const antes = client.get.getMockImplementation();
+    client.get.mockResolvedValue({ success: true, data: [
+      { id: 1, field_key: 'dni', label: 'DNI', type: 'text', required: true },
+    ] });
+    try {
+      const props = { onClose: vi.fn(), onSubmit: vi.fn().mockResolvedValue(), lead: null };
+      const { container, rerender } = render(<LeadFormDialog open {...props} />);
+      await act(async () => { await Promise.resolve(); });
+      fireEvent.input(container.querySelector('input[name="nombre"]'), { target: { value: 'Juan' } });
+      fireEvent.input(container.querySelector('input[name="telefono"]'), { target: { value: '600123456' } });
+      fireEvent.submit(container.querySelector('form'));
+      expect(await screen.findByText('Falta «DNI»: es obligatorio.')).toBeInTheDocument();
+      rerender(<LeadFormDialog open={false} {...props} />);
+      rerender(<LeadFormDialog open {...props} />);
+      await act(async () => { await Promise.resolve(); });
+      expect(screen.getByLabelText(/^DNI/)).toBeInTheDocument();
+      expect(screen.queryByText('Falta «DNI»: es obligatorio.')).toBeNull();
+    } finally {
+      client.get.mockImplementation(antes);
+    }
+  });
+
   it('cada etiqueta enlazada a su campo (#106)', async () => {
     const { container } = render(<LeadFormDialog open onClose={vi.fn()} onSubmit={vi.fn()} />);
     await screen.findAllByText(/Nuevo prospecto/i);
