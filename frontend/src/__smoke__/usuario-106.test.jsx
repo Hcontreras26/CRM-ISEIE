@@ -112,6 +112,22 @@ describe('Usuario (#106)', () => {
     }));
   });
 
+  // Visto en la revisión en el navegador: «Y además es…» y «Proyectos
+  // asignados» eran etiquetas de Field que no apuntaban a ningún campo. Son
+  // grupos: fieldset y legend, como en MultiCRM.
+  it('invitar y editar: ninguna etiqueta suelta; los grupos, con su legend', async () => {
+    const sueltas = (c) => [...c.querySelectorAll('label')]
+      .filter((l) => !l.querySelector('input') && (!l.htmlFor || !document.getElementById(l.htmlFor)))
+      .map((l) => l.textContent.trim());
+    const { container } = await abrirInvitar();
+    expect(sueltas(container)).toEqual([]);
+    expect([...container.querySelectorAll('legend')].map((l) => l.textContent)).toContain('Proyectos asignados * (obligatorio)');
+    cleanup();
+    const editar = await abrirEditar();
+    expect(sueltas(editar.container)).toEqual([]);
+    expect([...editar.container.querySelectorAll('legend')].map((l) => l.textContent)).toEqual(expect.arrayContaining(['Y además es…', 'Proyectos asignados']));
+  });
+
   it('editar: cada campo con su Field, y las ayudas con su campo', async () => {
     const { container } = await abrirEditar();
     expect(container.querySelector('select')).toBeNull();

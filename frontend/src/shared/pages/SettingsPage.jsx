@@ -491,7 +491,9 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
               ]}
             />
           </Field>
-          <Field label="Y además es…" hint="Opcional. Suma los permisos de otro rol sin perder los de este.">
+          {/* Un grupo de botones, no una casilla: fieldset y legend, como en MultiCRM (#106). */}
+          <fieldset className="min-w-0">
+            <legend className="mb-1.5 block px-1 text-secundario text-muted-foreground">Y además es…</legend>
             {/* Mas de un rol por persona: quien lleva prospectos y ademas da
                 clase no tiene que elegir. Solo SUMAN permisos; el principal
                 sigue siendo el de arriba. */}
@@ -512,11 +514,13 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
                 );
               })}
             </div>
-          </Field>
+            <p className="mt-1 px-1 text-secundario text-muted-foreground">Opcional. Suma los permisos de otro rol sin perder los de este.</p>
+          </fieldset>
           <Field label="Teléfono (WhatsApp)" htmlFor="editar-usuario-tel" hint="Se usa para el widget de WhatsApp y el contacto del gestor.">
             <input autoComplete="off" id="editar-usuario-tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+34 600 000 000" className={inputClass} />
           </Field>
-          <Field label="Proyectos asignados">
+          <fieldset className="min-w-0">
+            <legend className="mb-1.5 block px-1 text-secundario text-muted-foreground">Proyectos asignados</legend>
             {/* Agrupados por empresa, con «Marcar todos» y, para un admin, la
                 empresa entera con los campus que se creen (#220). */}
             <CampusPorEmpresa
@@ -531,7 +535,7 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
               onToggleEmpresa={empresas ? alternarEmpresa : undefined}
               faltaMigracion={faltaMigracionEmpresas}
             />
-          </Field>
+          </fieldset>
         </div>
 
         {/* Facturacion. Un admin puede siempre por su rol, asi que para el estas
@@ -673,7 +677,8 @@ function InviteUserModal({ projects, onClose, onCreated, empresas, faltaMigracio
               ]}
             />
           </Field>
-          <Field label="Proyectos asignados" required={role === 'admin' || role === 'gestor'}>
+          <fieldset className="min-w-0">
+            <legend className="mb-1.5 block px-1 text-secundario text-muted-foreground">Proyectos asignados{(role === 'admin' || role === 'gestor') && <span className="text-destructive"> *<span className="sr-only"> (obligatorio)</span></span>}</legend>
             {/* Agrupados por empresa, con «Marcar todos» y, para un admin, la
                 empresa entera con los campus que se creen (#220). */}
             <CampusPorEmpresa
@@ -688,7 +693,7 @@ function InviteUserModal({ projects, onClose, onCreated, empresas, faltaMigracio
               onToggleEmpresa={empresas ? alternarEmpresa : undefined}
               faltaMigracion={faltaMigracionEmpresas}
             />
-          </Field>
+          </fieldset>
         </div>
         <div className="flex justify-end gap-2 pt-1">
           <button onClick={onClose} className="h-9 px-4 rounded-md border border-border text-sm font-medium hover:bg-muted">Cancelar</button>
