@@ -3,6 +3,7 @@ import { GraduationCap, Plus, X, Warning, Trash, CheckCircle, Copy, ArrowsClockw
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjectContext } from '@/contexts/ProjectContext';
 import { toast } from '@/shared/hooks/useToast';
+import { avisoDeLoQueFalta, type Falta } from '@/shared/lib/loQueFalta';
 import client from '@/shared/api/client';
 import PageHeader from '@/shared/components/ui/PageHeader';
 import EmptyState from '@/shared/components/ui/EmptyState';
@@ -42,7 +43,6 @@ const hoy = () => new Date().toISOString().slice(0, 10);
 // La misma regla que type="email" del navegador (la del estándar HTML).
 const CORREO_RE = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 type Aviso = { title: string; description: string };
-const avisar = (a: Aviso | null) => { if (a) toast({ ...a, variant: 'destructive' }); return Boolean(a); };
 const faltaNombre = (nombre: string): Aviso | null => (nombre.trim()
   ? null : { title: 'Falta el nombre', description: 'Escríbelo en «Nombre y apellidos».' });
 const correoMalo = (correo: string): Aviso | null => (CORREO_RE.test(correo.trim())
@@ -56,6 +56,19 @@ const porcentajeMalo = (pct: string, campo: string): Aviso | null => {
 };
 const faltaDesde = (desde: string): Aviso | null => (desde
   ? null : { title: 'Falta la fecha', description: 'Pon en «Desde» el día que empezó con esta formación.' });
+// Alta y edición de una colaboración: el porcentaje y la fecha, los dos de
+// una vez si faltan los dos (#106). Devuelve si ha avisado.
+const avisarDeLaColaboracion = (f: FormData) => {
+  const pct = String(f.get('pct') ?? '');
+  const faltan: Falta[] = [];
+  const pctMalo = porcentajeMalo(pct, 'Porcentaje');
+  if (pctMalo) faltan.push({ ...pctMalo, que: 'un porcentaje de 0 a 100 en «Porcentaje»' });
+  const sinDesde = faltaDesde(String(f.get('desde') || ''));
+  if (sinDesde) faltan.push({ ...sinDesde, que: 'la fecha en «Desde»' });
+  const falta = avisoDeLoQueFalta(faltan);
+  if (falta) toast(falta);
+  return Boolean(falta);
+};
 const soloFecha = (f: string | null) => (f ? String(f).slice(0, 10) : null);
 
 const enCastellano = (f: string) => {
@@ -428,15 +441,22 @@ export default function TutoresPage() {
     const f = new FormData(e.currentTarget);
     // El % del curso no es obligatorio (vacío, se queda el de por defecto),
     // pero si está escrito, de 0 a 100 en medios, como pedía el navegador.
-    if (avisar(faltaNombre(String(f.get('nombre') || ''))
-      || correoMalo(String(f.get('email') || ''))
-      || (sinCorreos && !contrasena
-        ? { title: 'Falta la contraseña', description: 'Sin correos no se le puede mandar el enlace: escríbela o pulsa «Generar».' }
-        : null)
-      || (contrasena && contrasena.length < 8
-        ? { title: 'Contraseña demasiado corta', description: 'En «Contraseña», al menos 8 caracteres.' }
-        : null)
-      || (nuevoPct.trim() !== '' ? porcentajeMalo(nuevoPct, '%') : null))) return;
+    // Todo lo que falta o está mal, de una vez (#106).
+    const correo = String(f.get('email') || '');
+    const faltan: Falta[] = [];
+    if (faltaNombre(String(f.get('nombre') || ''))) faltan.push({ ...faltaNombre('')!, que: 'el nombre en «Nombre y apellidos»' });
+    if (!correo.trim()) faltan.push({ title: 'Falta el correo', description: 'Escríbelo en «Correo»: es con lo que entra al CRM.', que: 'el correo en «Correo»' });
+    else if (correoMalo(correo)) faltan.push({ ...correoMalo(correo)!, que: 'un correo válido en «Correo» (nombre@dominio.com)' });
+    if (sinCorreos && !contrasena) {
+      faltan.push({ title: 'Falta la contraseña', description: 'Sin correos no se le puede mandar el enlace: escríbela o pulsa «Generar».', que: 'la contraseña (escríbela o pulsa «Generar»)' });
+    } else if (contrasena && contrasena.length < 8) {
+      faltan.push({ title: 'Contraseña demasiado corta', description: 'En «Contraseña», al menos 8 caracteres.', que: 'una contraseña de al menos 8 caracteres' });
+    }
+    if (nuevoPct.trim() !== '' && porcentajeMalo(nuevoPct, '%')) {
+      faltan.push({ ...porcentajeMalo(nuevoPct, '%')!, que: 'un % del curso de 0 a 100' });
+    }
+    const falta = avisoDeLoQueFalta(faltan);
+    if (falta) { toast(falta); return; }
     setGuardando(true);
     try {
       const r = await tutoresApi.alta({
@@ -482,8 +502,7 @@ export default function TutoresPage() {
     e.preventDefault();
     if (!elegido) return;
     const f = new FormData(e.currentTarget);
-    if (avisar(porcentajeMalo(String(f.get('pct') ?? ''), 'Porcentaje')
-      || faltaDesde(String(f.get('desde') || '')))) return;
+    if (avisarDeLaColaboracion(f)) return;
     setGuardando(true);
     try {
       const r = await tutoresApi.crearColaboracion({
@@ -556,8 +575,7 @@ export default function TutoresPage() {
     if (!editColab) return;
     const f = new FormData(e.currentTarget);
     const hasta = String(f.get('hasta') || '').trim();
-    if (avisar(porcentajeMalo(String(f.get('pct') ?? ''), 'Porcentaje')
-      || faltaDesde(String(f.get('desde') || '')))) return;
+    if (avisarDeLaColaboracion(f)) return;
     setProcesando(true);
     try {
       const r = await tutoresApi.editarColaboracion(editColab.id, {

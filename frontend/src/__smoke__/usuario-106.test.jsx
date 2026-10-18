@@ -64,24 +64,52 @@ describe('Usuario (#106)', () => {
     fireEvent.change(screen.getByLabelText(/^Nombre y apellido/), { target: { value: 'Ana Test' } });
     fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: 'ana@' } });
     fireEvent.click(screen.getByRole('button', { name: 'Invitar' }));
-    expect(avisos.toast).toHaveBeenCalledWith(expect.objectContaining({
-      title: 'Email no válido', description: expect.stringMatching(/nombre@dominio\.com/),
-    }));
+    // Sin campus, va en la misma lista que el campus que falta.
+    expect(avisos.toast.mock.calls.at(-1)[0].description).toMatch(/un email válido en «Email» \(nombre@dominio\.com\)/);
   });
 
-  // Vacío no es «demasiado corto»: falta (visto en la prueba a mano).
-  it('invitar y editar: sin nombre dice «Falta el nombre»; con una letra, «demasiado corto»', async () => {
+  // Todo vacío: todo lo que falta, en un solo aviso (visto en la prueba a
+  // mano: decía solo «Falta el nombre», y vacío no es «demasiado corto»).
+  it('invitar: con todo vacío, todo lo que falta a la vez; con una letra, «demasiado corto» en la lista', async () => {
     await abrirInvitar();
+    fireEvent.click(screen.getByRole('button', { name: 'Invitar' }));
+    expect(avisos.toast).toHaveBeenLastCalledWith(expect.objectContaining({
+      title: 'Faltan datos',
+      description: 'Falta el nombre en «Nombre y apellido», el email en «Email» y al menos un campus en «Proyectos asignados».',
+    }));
+    fireEvent.change(screen.getByLabelText(/^Nombre y apellido/), { target: { value: 'A' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Invitar' }));
+    expect(avisos.toast.mock.calls.at(-1)[0].description).toMatch(/^Falta un nombre de al menos 2 letras en «Nombre y apellido», el email/);
+    expect(avisos.toast).not.toHaveBeenCalledWith(expect.objectContaining({ title: '✓ Usuario invitado' }));
+  });
+
+  it('si solo falta una cosa, su aviso de siempre (invitar y editar)', async () => {
+    await abrirInvitar();
+    // Soporte no necesita campus: solo falta el nombre.
+    fireEvent.click(screen.getByRole('combobox', { name: 'Rol' }));
+    fireEvent.mouseDown(screen.getByRole('option', { name: /^Soporte/ }));
+    fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: 'ana@empresa.com' } });
     fireEvent.click(screen.getByRole('button', { name: 'Invitar' }));
     expect(avisos.toast).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Falta el nombre', description: 'Escríbelo en «Nombre y apellido».' }));
     fireEvent.change(screen.getByLabelText(/^Nombre y apellido/), { target: { value: 'A' } });
     fireEvent.click(screen.getByRole('button', { name: 'Invitar' }));
-    expect(avisos.toast).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Nombre demasiado corto' }));
+    expect(avisos.toast).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Nombre demasiado corto', description: 'En «Nombre y apellido», al menos 2 caracteres.' }));
     cleanup();
     await abrirEditar();
     fireEvent.change(screen.getByLabelText(/^Nombre/), { target: { value: '' } });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
     expect(avisos.toast).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Falta el nombre', description: 'Escríbelo en «Nombre».' }));
+  });
+
+  it('editar: sin nombre y con el correo mal, los dos en un solo aviso', async () => {
+    await abrirEditar();
+    fireEvent.change(screen.getByLabelText(/^Nombre/), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText(/^Email/), { target: { value: 'laura@' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    expect(avisos.toast).toHaveBeenLastCalledWith(expect.objectContaining({
+      title: 'Faltan datos',
+      description: 'Falta el nombre en «Nombre» y un email válido en «Email» (nombre@dominio.com).',
+    }));
   });
 
   it('editar: cada campo con su Field, y las ayudas con su campo', async () => {

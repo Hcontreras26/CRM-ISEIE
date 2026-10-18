@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, act, cleanup } from '@testing-library/react';
+import { render, screen, act, cleanup, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -41,6 +41,7 @@ vi.mock('@/modules/invoices/api/invoices.api', () => ({
 }));
 
 import InvoiceCreatePage from '@/modules/invoices/pages/InvoiceCreatePage';
+import { toast } from '@/shared/hooks/useToast';
 import FiscalDataDialog from '@/modules/invoices/components/FiscalDataDialog';
 
 const esperar = () => act(async () => { await new Promise((ok) => setTimeout(ok, 0)); });
@@ -54,6 +55,18 @@ const camposPropios = (container) => [...container.querySelectorAll('input:not([
 
 describe('Nueva factura (#106)', () => {
   afterEach(() => cleanup());
+
+  // En divisa, el total en euros va en la misma lista que lo demás que falta
+  // (antes avisaba solo de él, y lo demás salía después).
+  it('en divisa: el total en euros, en la misma lista que lo demás que falta', async () => {
+    toast.mockClear();
+    await abrir();
+    fireEvent.click(screen.getByRole('combobox', { name: 'Moneda' }));
+    fireEvent.mouseDown(screen.getByRole('option', { name: /^USD/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Generar factura/ }));
+    expect(toast).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Faltan datos', variant: 'destructive' }));
+    expect(toast.mock.calls.at(-1)[0].description).toMatch(/^Nombre · .* · Total en euros$/);
+  });
 
   it('no queda ningún desplegable del navegador: todos son los del CRM', async () => {
     const { container } = await abrir();

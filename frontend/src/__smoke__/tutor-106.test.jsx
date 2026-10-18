@@ -91,7 +91,8 @@ describe('Tutor (#106)', () => {
 describe('Tutor: avisa el CRM, no el navegador (#106)', () => {
   beforeEach(() => { vi.clearAllMocks(); });
   afterEach(() => cleanup());
-  const aviso = (title) => expect(toast).toHaveBeenCalledWith(expect.objectContaining({ title, variant: 'destructive' }));
+  const aviso = (title) => expect(toast).toHaveBeenLastCalledWith(expect.objectContaining({ title, variant: 'destructive' }));
+  const lista = () => toast.mock.calls.at(-1)[0].description;
   const enviar = async (campo) => { await act(async () => { fireEvent.submit(campo.closest('form')); }); };
   const escribir = (campo, value) => fireEvent.change(campo, { target: { value } });
 
@@ -100,14 +101,30 @@ describe('Tutor: avisa el CRM, no el navegador (#106)', () => {
     fireEvent.click(screen.getByRole('button', { name: /Nuevo tutor/ }));
     const nombre = screen.getByLabelText(/^Nombre y apellidos/);
     expect(nombre.closest('form').noValidate).toBe(true);
+    // Todo vacío: todo lo que falta, en un solo aviso (#106).
+    escribir(screen.getByLabelText('Contraseña'), '');
+    await enviar(nombre);
+    aviso('Faltan datos');
+    expect(lista()).toBe('Falta el nombre en «Nombre y apellidos», el correo en «Correo» y la contraseña (escríbela o pulsa «Generar»).');
+    // Si solo falta una cosa, su aviso de siempre.
+    escribir(screen.getByLabelText('Contraseña'), 'larga-de-sobra');
+    escribir(screen.getByLabelText(/^Correo/), 'ana@prueba.local');
     await enviar(nombre);
     aviso('Falta el nombre');
     escribir(nombre, 'Ana Tutora');
+    escribir(screen.getByLabelText(/^Correo/), '');
     await enviar(nombre);
-    aviso('Correo no válido');
+    aviso('Falta el correo');
     escribir(screen.getByLabelText(/^Correo/), 'ana@');
     await enviar(nombre);
     aviso('Correo no válido');
+    // Lo mal escrito también va en la misma lista.
+    escribir(screen.getByLabelText('Contraseña'), 'corta');
+    escribir(screen.getByLabelText('%'), '150');
+    await enviar(nombre);
+    aviso('Faltan datos');
+    expect(lista()).toBe('Falta un correo válido en «Correo» (nombre@dominio.com), una contraseña de al menos 8 caracteres y un % del curso de 0 a 100.');
+    escribir(screen.getByLabelText('%'), '');
     escribir(screen.getByLabelText(/^Correo/), 'ana@prueba.local');
     // Sin correos a tutores, la contraseña es obligatoria (required={sinCorreos}).
     escribir(screen.getByLabelText('Contraseña'), '');
@@ -146,8 +163,12 @@ describe('Tutor: avisa el CRM, no el navegador (#106)', () => {
       await enviar(pct);
       aviso('Porcentaje no válido');
     }
-    escribir(pct, '7.5');
+    // Sin porcentaje ni fecha: los dos en un solo aviso (#106).
     escribir(screen.getByLabelText(/^Desde/), '');
+    await enviar(pct);
+    aviso('Faltan datos');
+    expect(lista()).toBe('Falta un porcentaje de 0 a 100 en «Porcentaje» y la fecha en «Desde».');
+    escribir(pct, '7.5');
     await enviar(pct);
     aviso('Falta la fecha');
     expect(tutoresApi.crearColaboracion).not.toHaveBeenCalled();
@@ -174,8 +195,11 @@ describe('Tutor: avisa el CRM, no el navegador (#106)', () => {
         await enviar(pct);
         aviso('Porcentaje no válido');
       }
-      escribir(pct, '12.5');
       escribir(screen.getByLabelText(/^Desde/), '');
+      await enviar(pct);
+      aviso('Faltan datos');
+      expect(lista()).toBe('Falta un porcentaje de 0 a 100 en «Porcentaje» y la fecha en «Desde».');
+      escribir(pct, '12.5');
       await enviar(pct);
       aviso('Falta la fecha');
       expect(tutoresApi.editarColaboracion).not.toHaveBeenCalled();

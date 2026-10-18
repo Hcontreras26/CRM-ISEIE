@@ -59,6 +59,28 @@ describe('Nueva venta (#106)', () => {
     expect(api.create).not.toHaveBeenCalled();
   });
 
+  it('sin producto ni precio, los dos en un solo aviso (#106)', async () => {
+    const { container } = abrir();
+    fireEvent.submit(container.querySelector('form'));
+    await waitFor(() => expect(api.toast).toHaveBeenLastCalledWith(expect.objectContaining({
+      title: 'Faltan datos',
+      description: 'Falta el producto en «Producto contratado» y el precio en «Precio base (EUR)».',
+    })));
+    expect(api.create).not.toHaveBeenCalled();
+  });
+
+  it('si el descuento se come el precio, su aviso aparte, después de lo que falta', async () => {
+    const { container } = abrir();
+    fireEvent.change(container.querySelector('#venta-producto-contratado'), { target: { value: 'Curso X' } });
+    fireEvent.change(container.querySelector('input[type="number"][required]'), { target: { value: '100' } });
+    fireEvent.click(screen.getByRole('combobox', { name: 'Descuento' }));
+    fireEvent.mouseDown(screen.getByRole('option', { name: 'Monto fijo (€)' }));
+    fireEvent.change(container.querySelector('#venta-descuento-valor'), { target: { value: '100' } });
+    fireEvent.submit(container.querySelector('form'));
+    await waitFor(() => expect(api.toast).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'El total queda en 0' })));
+    expect(api.create).not.toHaveBeenCalled();
+  });
+
   it('el obligatorio se anuncia como tal (Field compartido)', () => {
     abrir();
     expect(screen.getAllByText('(obligatorio)').length).toBeGreaterThanOrEqual(2);

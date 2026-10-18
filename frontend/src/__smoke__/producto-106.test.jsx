@@ -80,6 +80,14 @@ describe('Producto (#106)', () => {
     expect(productSchema.safeParse({ nombre: 'Máster', precio: '0.07' }).success).toBe(true);
   });
 
+  // Visto en la prueba a mano: vacío decía «al menos 2 caracteres».
+  it('sin nombre dice que es obligatorio; con una letra, que es corto', () => {
+    const vacio = productSchema.safeParse({ nombre: '' });
+    expect(vacio.error.issues[0].message).toBe('Es obligatorio: escríbelo');
+    const corto = productSchema.safeParse({ nombre: 'A' });
+    expect(corto.error.issues[0].message).toBe('El nombre debe tener al menos 2 caracteres');
+  });
+
   it('el esquema ya no dice «Invalid input» ni «>= 0»', () => {
     const r = productSchema.safeParse({ nombre: 'Máster', precio: -1, plazas_totales: -3 });
     const msgs = r.error.issues.map((i) => i.message);

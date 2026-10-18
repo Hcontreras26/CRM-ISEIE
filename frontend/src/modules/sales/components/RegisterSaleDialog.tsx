@@ -3,6 +3,7 @@ import { Receipt, X, MagnifyingGlass, UserCheck, UserPlus, UserMinus } from '@ph
 import usePermission from '@/shared/hooks/usePermission';
 import client from '@/shared/api/client';
 import { toast } from '@/shared/hooks/useToast';
+import { avisoDeLoQueFalta, type Falta } from '@/shared/lib/loQueFalta';
 import Portal from '@/shared/components/ui/portal';
 import Field from '@/shared/components/ui/Field';
 import FilaCampos from '@/shared/components/ui/FilaCampos';
@@ -220,27 +221,29 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
 
   async function handleSave() {
     if (!project?.id) { toast({ title: 'Selecciona un proyecto', variant: 'destructive' }); return; }
+    // Cada aviso dice qué falta y dónde ponerlo, no solo «requerido»; y si
+    // faltan varias cosas, todas de una vez (#106).
+    const faltan: Falta[] = [];
     if ((mode === 'existing' || mode === 'otra_gestora') && !selectedClient) {
-      toast({ title: 'Selecciona un cliente', description: 'Búscalo por nombre, email o teléfono.', variant: 'destructive' }); return;
-    }
-    // Cada aviso dice qué falta y dónde ponerlo, no solo «requerido» (#106).
-    const faltaNombre = () => toast({ title: 'Falta el nombre del cliente', description: 'Escríbelo en «Nombre del cliente».', variant: 'destructive' });
-    if (mode === 'new') {
-      if (!nombre.trim()) { faltaNombre(); return; }
-      if (!email.trim() && !telefono.trim()) {
-        toast({ title: 'Falta una forma de contacto', description: 'Pon el email o el teléfono del cliente: al menos uno de los dos.', variant: 'destructive' }); return;
-      }
+      faltan.push({ title: 'Selecciona un cliente', description: 'Búscalo por nombre, email o teléfono.', que: 'el cliente (búscalo por nombre, email o teléfono)' });
     }
     // Sin gestora basta el nombre: esta venta se registra justo cuando no hay
     // nada mas, y pedir un correo inventado es peor que no pedir nada.
-    if (mode === 'sin_gestora' && !nombre.trim()) { faltaNombre(); return; }
+    if ((mode === 'new' || mode === 'sin_gestora') && !nombre.trim()) {
+      faltan.push({ title: 'Falta el nombre del cliente', description: 'Escríbelo en «Nombre del cliente».', que: 'el nombre en «Nombre del cliente»' });
+    }
+    if (mode === 'new' && !email.trim() && !telefono.trim()) {
+      faltan.push({ title: 'Falta una forma de contacto', description: 'Pon el email o el teléfono del cliente: al menos uno de los dos.', que: 'el email o el teléfono' });
+    }
     if (!productoId) {
-      toast({ title: 'Falta la formación', description: 'Elígela en la lista de «Producto» (puedes buscarla escribiendo encima).', variant: 'destructive' }); return;
+      faltan.push({ title: 'Falta la formación', description: 'Elígela en la lista de «Producto» (puedes buscarla escribiendo encima).', que: 'la formación en «Producto»' });
     }
     const totalNum = parseFloat(importeTotal);
     if (!totalNum || totalNum <= 0) {
-      toast({ title: 'Falta el importe total', description: 'Escribe en «Importe total» una cantidad mayor que 0.', variant: 'destructive' }); return;
+      faltan.push({ title: 'Falta el importe total', description: 'Escribe en «Importe total» una cantidad mayor que 0.', que: 'el importe en «Importe total»' });
     }
+    const falta = avisoDeLoQueFalta(faltan);
+    if (falta) { toast(falta); return; }
     const pagadoNum = importePagado === '' ? totalNum : parseFloat(importePagado);
     if (pagadoNum < 0 || pagadoNum > totalNum) {
       toast({ title: 'El importe pagado no cuadra', description: `Tiene que estar entre 0 y el importe total (${totalNum.toFixed(2)}). Si lo dejas vacío, se toma el total.`, variant: 'destructive' }); return;
