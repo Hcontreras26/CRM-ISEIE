@@ -15,7 +15,12 @@ vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { role: 'supe
 vi.mock('@/contexts/ProjectContext', () => ({
   useProjectContext: () => ({ activeProject: { id: 1 }, projects: [{ id: 1, nombre: 'ISEIE' }] }),
 }));
-vi.mock('@/shared/api/client', () => ({ default: { get: vi.fn().mockResolvedValue({ success: true, data: [] }) } }));
+vi.mock('@/shared/api/client', () => ({
+  default: {
+    // Un curso en el catálogo, para elegirlo en «Añadir formación».
+    get: vi.fn((url) => Promise.resolve({ success: true, data: String(url).startsWith('/products') ? [{ id: 11, nombre: 'Curso Prueba', precio: 100 }] : [] })),
+  },
+}));
 vi.mock('@/modules/tutores/components/Entregables', () => ({ default: () => null }));
 vi.mock('@/modules/tutores/api/tutores.api', () => ({
   tutoresApi: {
@@ -181,16 +186,20 @@ describe('Tutor: avisa el CRM, no el navegador (#106)', () => {
     fireEvent.click(screen.getByRole('button', { name: /Añadir formación/ }));
     const pct = screen.getByLabelText(/^Porcentaje/);
     expect(pct.closest('form').noValidate).toBe(true);
-    for (const malo of ['150', '-1', '7.3', '']) {
-      escribir(pct, malo);
-      await enviar(pct);
-      aviso('Porcentaje no válido');
-    }
-    // Sin porcentaje ni fecha: los dos en un solo aviso (#106).
+    // Sin curso, sin porcentaje ni fecha: todo en un solo aviso, y vacío dice
+    // «Falta», no «no válido» (visto en la prueba a mano).
+    escribir(pct, '');
     escribir(screen.getByLabelText(/^Desde/), '');
     await enviar(pct);
     aviso('Faltan datos');
-    expect(lista()).toBe('Falta un porcentaje de 0 a 100 en «Porcentaje» y la fecha en «Desde».');
+    expect(lista()).toBe('Falta el curso en «Curso», el porcentaje en «Porcentaje» y la fecha en «Desde».');
+    escribir(screen.getByLabelText(/^Curso/), 'Curso');
+    fireEvent.click(await screen.findByRole('button', { name: /Curso Prueba/ }));
+    for (const malo of ['150', '-1', '7.3']) {
+      escribir(pct, malo);
+      await enviar(pct);
+      expect(lista()).toMatch(/un porcentaje de 0 a 100 en «Porcentaje»|En «Porcentaje», un número de 0 a 100/);
+    }
     escribir(pct, '7.5');
     await enviar(pct);
     aviso('Falta la fecha');
@@ -213,15 +222,17 @@ describe('Tutor: avisa el CRM, no el navegador (#106)', () => {
       fireEvent.click(screen.getByRole('button', { name: /^Editar$/ }));
       const pct = screen.getByLabelText(/^Porcentaje/);
       expect(pct.closest('form').noValidate).toBe(true);
-      for (const malo of ['101', '-0.5', '12.25', '']) {
+      for (const malo of ['101', '-0.5', '12.25']) {
         escribir(pct, malo);
         await enviar(pct);
         aviso('Porcentaje no válido');
       }
+      // Vacío dice «Falta», no «no válido»; y aquí no se pide curso: ya lo tiene.
+      escribir(pct, '');
       escribir(screen.getByLabelText(/^Desde/), '');
       await enviar(pct);
       aviso('Faltan datos');
-      expect(lista()).toBe('Falta un porcentaje de 0 a 100 en «Porcentaje» y la fecha en «Desde».');
+      expect(lista()).toBe('Falta el porcentaje en «Porcentaje» y la fecha en «Desde».');
       escribir(pct, '12.5');
       await enviar(pct);
       aviso('Falta la fecha');

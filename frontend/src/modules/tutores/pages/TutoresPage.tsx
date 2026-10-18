@@ -58,11 +58,18 @@ const faltaDesde = (desde: string): Aviso | null => (desde
   ? null : { title: 'Falta la fecha', description: 'Pon en «Desde» el día que empezó con esta formación.' });
 // Alta y edición de una colaboración: el porcentaje y la fecha, los dos de
 // una vez si faltan los dos (#106). Devuelve si ha avisado.
-const avisarDeLaColaboracion = (f: FormData) => {
+const avisarDeLaColaboracion = (f: FormData, pedirCurso = false) => {
   const pct = String(f.get('pct') ?? '');
   const faltan: Falta[] = [];
-  const pctMalo = porcentajeMalo(pct, 'Porcentaje');
-  if (pctMalo) faltan.push({ ...pctMalo, que: 'un porcentaje de 0 a 100 en «Porcentaje»' });
+  // Sin curso, el servidor contestaba con un error que no tenía que ver.
+  if (pedirCurso && !Number(f.get('productId'))) {
+    faltan.push({ title: 'Falta el curso', description: 'Elígelo en «Curso»: escribe para buscarlo.', que: 'el curso en «Curso»' });
+  }
+  // Vacío no es «no válido»: falta (visto en la prueba a mano).
+  const pctMalo = pct.trim() ? porcentajeMalo(pct, 'Porcentaje') : null;
+  if (!pct.trim()) {
+    faltan.push({ title: 'Falta el porcentaje', description: 'Escríbelo en «Porcentaje»: de 0 a 100 (se admiten medios, como 7,5).', que: 'el porcentaje en «Porcentaje»' });
+  } else if (pctMalo) faltan.push({ ...pctMalo, que: 'un porcentaje de 0 a 100 en «Porcentaje»' });
   const sinDesde = faltaDesde(String(f.get('desde') || ''));
   if (sinDesde) faltan.push({ ...sinDesde, que: 'la fecha en «Desde»' });
   const falta = avisoDeLoQueFalta(faltan);
@@ -502,7 +509,7 @@ export default function TutoresPage() {
     e.preventDefault();
     if (!elegido) return;
     const f = new FormData(e.currentTarget);
-    if (avisarDeLaColaboracion(f)) return;
+    if (avisarDeLaColaboracion(f, true)) return;
     setGuardando(true);
     try {
       const r = await tutoresApi.crearColaboracion({
@@ -1013,22 +1020,28 @@ export default function TutoresPage() {
       {popupColab && elegido && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setPopupColab(false)}>
           <form onSubmit={altaColaboracion} onClick={(e) => e.stopPropagation()} noValidate
-            className="bg-card border border-border rounded-lg shadow-2xl w-full max-w-md p-4 space-y-3">
+            className="bg-card border border-border rounded-lg shadow-2xl w-full max-w-lg p-4 space-y-3">
+            {/* max-w-lg: con max-w-md, las tres fechas no cabían y «Hasta» salía
+                cortada, con el calendario encima (visto en la prueba a mano). */}
             <div className="flex items-start justify-between gap-3">
               <h2 className="font-bold">Formación de {elegido.nombre}</h2>
-              <button type="button" onClick={() => setPopupColab(false)} className="text-muted-foreground hover:text-foreground">
+              <button type="button" onClick={() => setPopupColab(false)} aria-label="Cerrar" className="text-muted-foreground hover:text-foreground">
                 <X size={16} weight="bold" />
               </button>
             </div>
 
             {/* Con cientos de cursos, un desplegable no vale: hay que poder escribir. */}
-            <BuscadorCurso
-              cursos={formaciones}
-              valor={cursoColab}
-              onElegir={setCursoColab}
-              excluir={colabs.map((c) => c.product_id)}
-              autoFocus
-            />
+            {/* Con su etiqueta, como en «Nuevo tutor» (#106). */}
+            <Field label="Curso" required htmlFor="colab-curso">
+              <BuscadorCurso
+                id="colab-curso"
+                cursos={formaciones}
+                valor={cursoColab}
+                onElegir={setCursoColab}
+                excluir={colabs.map((c) => c.product_id)}
+                autoFocus
+              />
+            </Field>
             <input type="hidden" name="productId" value={cursoColab ?? ''} />
 
             <FilaCampos columnas={3}>
@@ -1165,7 +1178,7 @@ export default function TutoresPage() {
       {editColab && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setEditColab(null)}>
           <form onSubmit={guardarEdicionColab} onClick={(e) => e.stopPropagation()} noValidate
-            className="bg-card border border-border rounded-lg shadow-2xl w-full max-w-md p-4 space-y-3">
+            className="bg-card border border-border rounded-lg shadow-2xl w-full max-w-lg p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <h2 className="font-bold">Editar formación</h2>
