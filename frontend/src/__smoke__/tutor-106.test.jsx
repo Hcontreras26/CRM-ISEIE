@@ -103,6 +103,23 @@ describe('Tutor (#106)', () => {
   });
 });
 
+// Visto en la prueba de ISEIE: Escape solo cerraba «Nuevo tutor» y «Añadir
+// formación»; «Editar datos» o «Retirar» se quedaban abiertas.
+describe('Tutor: Escape cierra cada ventana (#106)', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+  afterEach(() => cleanup());
+  for (const boton of [/Nuevo tutor/, /Editar datos/, /^Retirar/, /Añadir formación/]) {
+    it(`«${boton.source.replace(/[\^\\/]/g, '')}»`, async () => {
+      await abrirPagina();
+      if (!/Nuevo/.test(boton.source)) await elegirTutora();
+      fireEvent.click(screen.getAllByRole('button', { name: boton })[0]);
+      expect(document.querySelector('div.fixed.inset-0')).not.toBeNull();
+      fireEvent.keyDown(document, { key: 'Escape' });
+      expect(document.querySelector('div.fixed.inset-0')).toBeNull();
+    });
+  }
+});
+
 // Visto en la prueba a mano de la #106: el globo «Rellene este campo» del
 // navegador. Ahora avisa el CRM, comprobando lo mismo que comprobaba el navegador.
 describe('Tutor: avisa el CRM, no el navegador (#106)', () => {

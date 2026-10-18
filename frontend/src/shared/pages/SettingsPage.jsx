@@ -9,6 +9,7 @@ import {
 } from '@phosphor-icons/react';
 import client from '@/shared/api/client';
 import { toast } from '@/shared/hooks/useToast';
+import { useEscapeKey } from '@/shared/hooks/useDialogA11y';
 import { avisoDeLoQueFalta } from '@/shared/lib/loQueFalta';
 import { useConfirm } from '@/shared/components/ui/useConfirm';
 import MarcaSection from './MarcaSection';
@@ -332,6 +333,8 @@ function UsersSection({ isAdmin }) {
 }
 
 function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigracionEmpresas = false }) {
+  // Escape cierra, como los demás formularios (#106).
+  useEscapeKey(onClose);
   const { user: me } = useAuth();
   const isSuperadmin = me?.role === 'superadmin';
   const [nombre, setNombre] = useState(user.nombre || '');
@@ -587,6 +590,8 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
 }
 
 function InviteUserModal({ projects, onClose, onCreated, empresas, faltaMigracionEmpresas = false }) {
+  // Escape cierra, como los demás formularios (#106).
+  useEscapeKey(onClose);
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('gestor');

@@ -128,6 +128,22 @@ describe('Usuario (#106)', () => {
     expect([...editar.container.querySelectorAll('legend')].map((l) => l.textContent)).toEqual(expect.arrayContaining(['Y además es…', 'Proyectos asignados']));
   });
 
+  // Visto en la prueba de ISEIE: Escape no cerraba ninguna de las dos.
+  it('invitar y editar: Escape cierra la ventana; con el rol abierto, solo el desplegable', async () => {
+    await abrirInvitar();
+    const rol = screen.getByRole('combobox', { name: 'Rol' });
+    fireEvent.click(rol);
+    fireEvent.keyDown(rol, { key: 'Escape' });
+    expect(screen.getByRole('button', { name: 'Invitar' })).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('button', { name: 'Invitar' })).toBeNull();
+    cleanup();
+    await abrirEditar();
+    expect(screen.getByRole('button', { name: 'Guardar' })).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('button', { name: 'Guardar' })).toBeNull();
+  });
+
   it('editar: cada campo con su Field, y las ayudas con su campo', async () => {
     const { container } = await abrirEditar();
     expect(container.querySelector('select')).toBeNull();
