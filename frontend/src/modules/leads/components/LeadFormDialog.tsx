@@ -62,6 +62,9 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
   // Los personalizados obligatorios que se quedaron vacíos al pulsar «Crear».
   // Antes lo decía el globo del navegador; ahora, el Field de cada uno (#106).
   const [faltanPersonalizados, setFaltanPersonalizados] = useState<string[]>([]);
+  // Y los de número con algo que no es un número: sin el globo del navegador
+  // (noValidate) pasaban como vacíos.
+  const [numerosMalos, setNumerosMalos] = useState<string[]>([]);
   const vacio = (k: string) => (customValues[k] ?? '') === '';
   const [duplicates, setDuplicates] = useState<DuplicateLead[]>([]);
   // Confirmación de duplicado bloqueante (busca por email O teléfono)
@@ -138,6 +141,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
       setCustomValues((lead?.custom_fields as Record<string, unknown>) || {});
       // Los avisos de personalizados de la vez anterior no se arrastran.
       setFaltanPersonalizados([]);
+      setNumerosMalos([]);
     }
   }, [open, lead, reset]);
 
@@ -161,7 +165,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
 
   if (!open) return null;
 
-  async function handleFormSubmit(data: LeadFormData): Promise<void> {
+  async function handleFormSubmit(data: LeadFormData, evento?: { target?: EventTarget | null }): Promise<void> {
     if (!effectiveProjectId) return;
     // Los mismos que comprobaba el navegador: los de texto, número, fecha y
     // área de texto. El desplegable y el sí/no nunca se comprobaron.
@@ -169,7 +173,11 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
       .filter((f) => f.required && f.type !== 'select' && f.type !== 'boolean' && vacio(f.field_key))
       .map((f) => f.field_key);
     setFaltanPersonalizados(faltan);
-    if (faltan.length) return;
+    const malos = [...((evento?.target as Element | null)?.querySelectorAll<HTMLInputElement>('input[type=number][id^="prospecto-cf-"]') || [])]
+      .filter((c) => c.validity?.badInput)
+      .map((c) => c.id.replace('prospecto-cf-', ''));
+    setNumerosMalos(malos);
+    if (faltan.length || malos.length) return;
     let nombre = data.nombre;
     const sinNombreFlag = (customValues as any)?._sin_nombre === true;
     if (sinNombreFlag && (!nombre || !nombre.trim() || /^sin nombre$/i.test(nombre.trim()))) {
@@ -414,7 +422,8 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                     <Field key={f.id} label={f.label} required={f.required} htmlFor={`prospecto-cf-${f.field_key}`}
                       className={f.type === 'textarea' ? 'sm:col-span-2' : undefined}
                       error={faltanPersonalizados.includes(f.field_key) && vacio(f.field_key)
-                        ? `Falta «${f.label}»: es obligatorio.` : undefined}>
+                        ? `Falta «${f.label}»: es obligatorio.`
+                        : numerosMalos.includes(f.field_key) ? `En «${f.label}», escribe solo un número.` : undefined}>
                       {f.type === 'textarea' ? (
                         // `h-auto`, no `h-20`: en la hoja de estilos `h-9` (de
                         // inputClass) va después de `h-20` y la dejaba en 36 px.

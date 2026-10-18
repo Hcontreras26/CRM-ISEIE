@@ -59,6 +59,19 @@ describe('Nueva venta (#106)', () => {
     expect(api.create).not.toHaveBeenCalled();
   });
 
+  // Sin el globo del navegador, «2-» en una casilla de número pasaba como vacío.
+  it('una casilla de número con algo que no es un número va en el aviso', async () => {
+    const { container } = abrir();
+    fireEvent.change(container.querySelector('#venta-producto-contratado'), { target: { value: 'Curso X' } });
+    Object.defineProperty(container.querySelector('#venta-precio-base'), 'validity', { value: { badInput: true } });
+    fireEvent.submit(container.querySelector('form'));
+    // Una sola vez: mal escrito, no también «falta el precio».
+    await waitFor(() => expect(api.toast).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'Número no válido', description: 'En «Precio base (EUR)», escribe solo un número.',
+    })));
+    expect(api.create).not.toHaveBeenCalled();
+  });
+
   it('sin producto ni precio, los dos en un solo aviso (#106)', async () => {
     const { container } = abrir();
     fireEvent.submit(container.querySelector('form'));

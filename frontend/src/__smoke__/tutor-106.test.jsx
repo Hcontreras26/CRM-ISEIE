@@ -152,6 +152,17 @@ describe('Tutor: avisa el CRM, no el navegador (#106)', () => {
     expect(tutoresApi.alta).toHaveBeenCalledWith(expect.objectContaining({ nombre: 'Ana Tutora', email: 'ana@prueba.local' }));
   });
 
+  it('nuevo tutor: el % del curso con algo que no es un número va en el aviso', async () => {
+    await abrirPagina();
+    fireEvent.click(screen.getByRole('button', { name: /Nuevo tutor/ }));
+    escribir(screen.getByLabelText(/^Nombre y apellidos/), 'Ana Tutora');
+    escribir(screen.getByLabelText(/^Correo/), 'ana@prueba.local');
+    Object.defineProperty(screen.getByLabelText('%'), 'validity', { value: { badInput: true } });
+    await enviar(screen.getByLabelText(/^Nombre y apellidos/));
+    aviso('Número no válido');
+    expect(tutoresApi.alta).not.toHaveBeenCalled();
+  });
+
   it('añadir formación: el porcentaje de 0 a 100 (con medios) y la fecha «Desde»', async () => {
     await abrirPagina();
     await elegirTutora();

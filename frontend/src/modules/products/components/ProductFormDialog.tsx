@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, type BaseSyntheticEvent } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { productSchema } from '../validation/product.schema';
@@ -11,7 +11,7 @@ import { useProjectContext } from '@/contexts/ProjectContext';
 import { useEscapeKey } from '@/shared/hooks/useDialogA11y';
 import { uploadProductImage, deleteProductImage, getProductImageUrl } from '../api/products.api';
 import { toast } from '@/shared/hooks/useToast';
-import { avisoDeLoQueFalta, type Falta } from '@/shared/lib/loQueFalta';
+import { avisoDeLoQueFalta, numerosMalEscritos, type Falta } from '@/shared/lib/loQueFalta';
 import { useConfirm } from '@/shared/components/ui/useConfirm';
 import Field from '@/shared/components/ui/Field';
 import FilaCampos from '@/shared/components/ui/FilaCampos';
@@ -195,7 +195,9 @@ export default function ProductFormDialog({ open, onClose, product, onSubmit }: 
 
   if (!open) return null;
 
-  async function handleFormSubmit(data: any) {
+  async function handleFormSubmit(data: any, evento?: BaseSyntheticEvent) {
+    const falta = avisoDeLoQueFalta(numerosMalEscritos(evento?.target));
+    if (falta) { toast(falta); return; }
     const payload = {
       ...data,
       precio: data.precio === '' || data.precio === null || Number.isNaN(data.precio) ? null : Number(data.precio),
@@ -222,11 +224,11 @@ export default function ProductFormDialog({ open, onClose, product, onSubmit }: 
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(handleFormSubmit, (errs) => {
+        <form onSubmit={handleSubmit(handleFormSubmit, (errs, evento) => {
           // No fallar en silencio: si la validación bloquea el submit, avisar qué campo.
-          const faltan = Object.entries(errs)
+          const faltan = numerosMalEscritos(evento?.target).concat(Object.entries(errs)
             .filter(([, e]: [string, any]) => typeof e?.message === 'string')
-            .map(([k, e]: [string, any]) => faltaDelEsquema(k, e.message));
+            .map(([k, e]: [string, any]) => faltaDelEsquema(k, e.message)));
           toast(avisoDeLoQueFalta(faltan) || { title: 'Revisa el formulario', description: 'Hay campos inválidos', variant: 'destructive' });
         // noValidate: el aviso lo da el esquema, diciendo el campo, y no el
         // globo del navegador (#106).
