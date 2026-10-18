@@ -69,6 +69,21 @@ describe('Usuario (#106)', () => {
     }));
   });
 
+  // Vacío no es «demasiado corto»: falta (visto en la prueba a mano).
+  it('invitar y editar: sin nombre dice «Falta el nombre»; con una letra, «demasiado corto»', async () => {
+    await abrirInvitar();
+    fireEvent.click(screen.getByRole('button', { name: 'Invitar' }));
+    expect(avisos.toast).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Falta el nombre', description: 'Escríbelo en «Nombre y apellido».' }));
+    fireEvent.change(screen.getByLabelText(/^Nombre y apellido/), { target: { value: 'A' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Invitar' }));
+    expect(avisos.toast).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Nombre demasiado corto' }));
+    cleanup();
+    await abrirEditar();
+    fireEvent.change(screen.getByLabelText(/^Nombre/), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    expect(avisos.toast).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Falta el nombre', description: 'Escríbelo en «Nombre».' }));
+  });
+
   it('editar: cada campo con su Field, y las ayudas con su campo', async () => {
     const { container } = await abrirEditar();
     expect(container.querySelector('select')).toBeNull();

@@ -379,7 +379,7 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
   }
 
   async function save() {
-    if (nombre.trim().length < 2) { toast({ title: 'Nombre demasiado corto', description: 'En «Nombre», al menos 2 caracteres.', variant: 'destructive' }); return; }
+    if (nombre.trim().length < 2) { toast(nombre.trim() ? { title: 'Nombre demasiado corto', description: 'En «Nombre», al menos 2 caracteres.', variant: 'destructive' } : { title: 'Falta el nombre', description: 'Escríbelo en «Nombre».', variant: 'destructive' }); return; }
     const projList = Object.entries(assigned).map(([projectId, recibeLeads]) => ({ projectId: Number(projectId), recibeLeads: !!recibeLeads }));
     // El correo solo si ha cambiado, y solo lo cambia el super admin (#248). Antes
     // de guardar, lo que supone: sobre todo si recibe prospectos por Make.
@@ -607,7 +607,7 @@ function InviteUserModal({ projects, onClose, onCreated, empresas, faltaMigracio
   }
 
   async function submit() {
-    if (nombre.trim().length < 2) { toast({ title: 'Nombre demasiado corto', description: 'En «Nombre y apellido», al menos 2 caracteres.', variant: 'destructive' }); return; }
+    if (nombre.trim().length < 2) { toast(nombre.trim() ? { title: 'Nombre demasiado corto', description: 'En «Nombre y apellido», al menos 2 caracteres.', variant: 'destructive' } : { title: 'Falta el nombre', description: 'Escríbelo en «Nombre y apellido».', variant: 'destructive' }); return; }
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) { toast({ title: 'Email no válido', description: 'Escríbelo en «Email» como nombre@dominio.com.', variant: 'destructive' }); return; }
     const projList = Object.entries(assigned).map(([projectId, recibeLeads]) => ({ projectId: Number(projectId), recibeLeads: !!recibeLeads }));
     // Un admin o una gestora sin campus entraría a un CRM vacío (#220). Al
