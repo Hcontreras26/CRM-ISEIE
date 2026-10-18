@@ -396,7 +396,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
                             onClick={() => selectClient(c)}
                             className="w-full text-left px-3 py-2 hover:bg-muted text-sm border-b last:border-0 border-border"
                           >
-                            <p className="font-medium truncate">{c.nombre || '— sin nombre —'}</p>
+                            <p className="font-medium truncate">{c.nombre || 'Sin nombre'}</p>
                             <p className="text-[11px] text-muted-foreground truncate">{c.email || '—'} {c.telefono ? `· ${c.telefono}` : ''}</p>
                           </button>
                         ))}
@@ -407,7 +407,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
                   <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 rounded-md p-3 flex items-start gap-3">
                     <UserCheck size={20} weight="duotone" className="text-emerald-600 flex-shrink-0 mt-0.5" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold truncate">{selectedClient.nombre || '— sin nombre —'}</p>
+                      <p className="text-sm font-semibold truncate">{selectedClient.nombre || 'Sin nombre'}</p>
                       <p className="text-secundario text-muted-foreground truncate">{selectedClient.email || '—'} {selectedClient.telefono ? `· ${selectedClient.telefono}` : ''}</p>
                       <p className="text-secundario text-emerald-700 dark:text-emerald-400 mt-0.5">Cliente seleccionado — se le añadirá una nueva venta.</p>
                     </div>
@@ -454,7 +454,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
                             onClick={() => selectClient(c)}
                             className="w-full text-left px-3 py-2 hover:bg-muted text-sm border-b last:border-0 border-border"
                           >
-                            <p className="font-medium truncate">{c.nombre || '— sin nombre —'}</p>
+                            <p className="font-medium truncate">{c.nombre || 'Sin nombre'}</p>
                             <p className="text-[11px] text-muted-foreground truncate">
                               {c.email || '—'} {c.telefono ? `· ${c.telefono}` : ''}
                               {' · '}{c.responsable_nombre || 'sin gestora'}
@@ -468,7 +468,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
                   <div className="bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-900 rounded-md p-3 flex items-start gap-3">
                     <UserCheck size={20} weight="duotone" className="text-sky-600 flex-shrink-0 mt-0.5" />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold truncate">{selectedClient.nombre || '— sin nombre —'}</p>
+                      <p className="text-sm font-semibold truncate">{selectedClient.nombre || 'Sin nombre'}</p>
                       <p className="text-secundario text-muted-foreground truncate">{selectedClient.email || '—'} {selectedClient.telefono ? `· ${selectedClient.telefono}` : ''}</p>
                       {selectedClient.responsable_nombre ? (
                         <p className="text-secundario text-sky-700 dark:text-sky-400 mt-0.5">
@@ -570,7 +570,7 @@ export default function RegisterSaleDialog({ open, onClose, project, onSaved, mo
                     onChange={setProductoId}
                     ariaLabel="Producto"
                     options={[
-                      { value: '', label: '— Selecciona —' },
+                      { value: '', label: 'Elige la formación…' },
                       ...productosFiltrados.map((p) => ({
                         value: p.id,
                         label: `${p.nombre}${p.precio ? ` (${p.precio} ${p.moneda || ''})` : ''}`,

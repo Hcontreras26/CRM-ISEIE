@@ -432,7 +432,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                           value={(customValues[f.field_key] as string) || ''}
                           onChange={(v) => setCustomValues({ ...customValues, [f.field_key]: v })}
                           options={[
-                            { value: '', label: 'Seleccionar...' },
+                            { value: '', label: 'Elige una opción…' },
                             ...(f.options || []).map(o => ({ value: o, label: o })),
                           ]}
                           ariaLabel={f.label}

@@ -181,6 +181,23 @@ describe('formato de los formularios (#106)', () => {
     expect(malas).toEqual([]);
   });
 
+  // Visto en la prueba a mano (17/10): la opción vacía de cada desplegable lo
+  // decía de una forma («— elegir factura —», «— Selecciona —», «Seleccionar...»).
+  // Todas con «Elige …» y sin guiones, como en MultiCRM.
+  it('ningún texto entre guiones en los formularios: la opción vacía dice «Elige …»', () => {
+    const ENTRE_GUIONES = /(['"`])\s*[—-]\s+[^'"`]*?\s+[—-]\s*\1/;
+    const malas = [];
+    const otros = ['src/modules/invoices/components/FiscalDataDialog.tsx',
+      'src/modules/field-definitions/components/CustomFieldRenderer.tsx']
+      .map((ruta) => ({ ruta, texto: TODOS.find((x) => x.ruta === ruta).texto }));
+    for (const { ruta, texto } of [...deLaLista(), ...otros]) {
+      lineas(texto).forEach((l, i) => {
+        if (ENTRE_GUIONES.test(l) || /label: ['"]Seleccionar\.\.\.['"]/.test(l)) malas.push(`${ruta}:${i + 1}: ${l.trim()}`);
+      });
+    }
+    expect(malas).toEqual([]);
+  });
+
   it('deja escrito cuántas etiquetas sueltas quedan en el resto del CRM', () => {
     const CANON = 'mb-1.5 block px-1 text-secundario text-muted-foreground';
     const estilos = new Map();
