@@ -11,6 +11,7 @@ import { useProjectContext } from '@/contexts/ProjectContext';
 import { useEscapeKey } from '@/shared/hooks/useDialogA11y';
 import { uploadProductImage, deleteProductImage, getProductImageUrl } from '../api/products.api';
 import { toast } from '@/shared/hooks/useToast';
+import { avisoDeLoQueFalta, type Falta } from '@/shared/lib/loQueFalta';
 import { useConfirm } from '@/shared/components/ui/useConfirm';
 import Field from '@/shared/components/ui/Field';
 import FilaCampos from '@/shared/components/ui/FilaCampos';
@@ -22,6 +23,23 @@ const ETIQUETAS: Record<string, string> = {
   plazas_totales: 'Plazas de la convocatoria', plazas_ocupadas_previas: 'Ya ocupadas antes del CRM',
   url_info: 'URL de información / landing', stripe_link: 'Enlace de pago Stripe',
 };
+
+// Cada error del esquema, dicho dentro de la lista de «Faltan datos» como en
+// los demás formularios (#106). Antes salía «Nombre: El nombre debe…».
+const EN_LA_LISTA: Record<string, string> = {
+  'Falta el nombre': 'el nombre',
+  'El nombre debe tener al menos 2 caracteres': 'un nombre de al menos 2 letras',
+  'Escribe un número entero, 0 o mayor': 'un número entero (0 o más)',
+  'El precio no puede ser negativo': 'un precio de 0 o más',
+  'Como mucho 2 decimales (céntimos)': 'un precio con 2 decimales como mucho',
+  'Como mucho 500 caracteres': '500 caracteres como mucho',
+};
+function faltaDelEsquema(campo: string, mensaje: string): Falta {
+  const etiqueta = ETIQUETAS[campo] || campo;
+  return mensaje === 'Falta el nombre'
+    ? { title: 'Falta el nombre', description: 'Escríbelo en «Nombre».', que: 'el nombre en «Nombre»' }
+    : { title: `Revisa «${etiqueta}»`, description: mensaje, que: `${EN_LA_LISTA[mensaje] || mensaje.toLowerCase()} en «${etiqueta}»` };
+}
 
 // react-hook-form no siempre devuelve un string en `.message`: con campos que
 // son una unión o que pasan por `preprocess` puede venir el objeto de error
@@ -206,24 +224,24 @@ export default function ProductFormDialog({ open, onClose, product, onSubmit }: 
 
         <form onSubmit={handleSubmit(handleFormSubmit, (errs) => {
           // No fallar en silencio: si la validación bloquea el submit, avisar qué campo.
-          const msgs = Object.entries(errs)
+          const faltan = Object.entries(errs)
             .filter(([, e]: [string, any]) => typeof e?.message === 'string')
-            .map(([k, e]: [string, any]) => `${ETIQUETAS[k] || k}: ${e.message}`);
-          toast({ title: 'Revisa el formulario', description: msgs.join(' · ') || 'Hay campos inválidos', variant: 'destructive' });
+            .map(([k, e]: [string, any]) => faltaDelEsquema(k, e.message));
+          toast(avisoDeLoQueFalta(faltan) || { title: 'Revisa el formulario', description: 'Hay campos inválidos', variant: 'destructive' });
         // noValidate: el aviso lo da el esquema, diciendo el campo, y no el
         // globo del navegador (#106).
         })} noValidate className="space-y-3">
           <FilaCampos>
             <Field label="Nombre" htmlFor="producto-nombre" required error={textoError((errors as any).nombre)}>
-              <input id="producto-nombre" {...register('nombre')} placeholder={`Nombre del ${productoLabel.toLowerCase()}`} className={inputClass} />
+              <input autoComplete="off" id="producto-nombre" {...register('nombre')} placeholder={`Nombre del ${productoLabel.toLowerCase()}`} className={inputClass} />
             </Field>
             <Field label="SKU / código" htmlFor="producto-sku" error={textoError((errors as any).sku)}>
-              <input id="producto-sku" {...register('sku')} placeholder="opcional" className={inputClass} />
+              <input autoComplete="off" id="producto-sku" {...register('sku')} placeholder="opcional" className={inputClass} />
             </Field>
           </FilaCampos>
 
           <Field label="Descripción" htmlFor="producto-descripcion" error={textoError((errors as any).descripcion)}>
-            <textarea
+            <textarea autoComplete="off"
               {...register('descripcion')}
               placeholder="Descripción corta..."
               rows={2}
@@ -295,7 +313,7 @@ export default function ProductFormDialog({ open, onClose, product, onSubmit }: 
             </div>
             <FilaCampos columnas={3}>
               <Field label="Precio" htmlFor="producto-precio" error={textoError((errors as any).precio)}>
-                <input id="producto-precio" {...register('precio')} type="number" step="0.01" min="0" placeholder="0.00" className={inputClass} />
+                <input autoComplete="off" id="producto-precio" {...register('precio')} type="number" step="0.01" min="0" placeholder="0.00" className={inputClass} />
               </Field>
               <Field label="Moneda" htmlFor="producto-moneda">
                 <Controller
@@ -318,14 +336,14 @@ export default function ProductFormDialog({ open, onClose, product, onSubmit }: 
                 />
               </Field>
               <Field label="Duración" htmlFor="producto-duracion" hint="ej: 8 sesiones">
-                <input id="producto-duracion" {...register('duracion')} placeholder="opcional" className={inputClass} />
+                <input autoComplete="off" id="producto-duracion" {...register('duracion')} placeholder="opcional" className={inputClass} />
               </Field>
             </FilaCampos>
             <Field label="URL de información / landing" htmlFor="producto-url-info" error={textoError((errors as any).url_info)}>
-              <input id="producto-url-info" {...register('url_info')} placeholder="https://..." className={inputClass} />
+              <input autoComplete="off" id="producto-url-info" {...register('url_info')} placeholder="https://..." className={inputClass} />
             </Field>
             <Field label="Enlace de pago Stripe (opcional)" htmlFor="producto-stripe-link" error={textoError((errors as any).stripe_link)}>
-              <input id="producto-stripe-link" {...register('stripe_link')} placeholder="https://buy.stripe.com/..." className={`${inputClass} font-mono`} />
+              <input autoComplete="off" id="producto-stripe-link" {...register('stripe_link')} placeholder="https://buy.stripe.com/..." className={`${inputClass} font-mono`} />
             </Field>
             <Field label="Régimen fiscal (IVA)" htmlFor="producto-regimen" hint="Déjalo por defecto salvo que el producto tenga un régimen fijo (p. ej. formación exenta de IVA).">
               <Select<string>
@@ -348,16 +366,16 @@ export default function ProductFormDialog({ open, onClose, product, onSubmit }: 
             </div>
             <FilaCampos columnas={4}>
               <Field label="Horas" htmlFor="producto-horas">
-                <input id="producto-horas" {...register('horas')} placeholder="ej: 1500 horas" className={inputClass} />
+                <input autoComplete="off" id="producto-horas" {...register('horas')} placeholder="ej: 1500 horas" className={inputClass} />
               </Field>
               <Field label="Nº módulos" htmlFor="producto-num-modulos" error={textoError((errors as any).num_modulos)}>
-                <input id="producto-num-modulos" {...register('num_modulos')} type="number" min="0" placeholder="ej: 10" className={inputClass} />
+                <input autoComplete="off" id="producto-num-modulos" {...register('num_modulos')} type="number" min="0" placeholder="ej: 10" className={inputClass} />
               </Field>
               <Field label="Modalidad" htmlFor="producto-modalidad">
-                <input id="producto-modalidad" {...register('modalidad')} placeholder="Online, Presencial..." className={inputClass} />
+                <input autoComplete="off" id="producto-modalidad" {...register('modalidad')} placeholder="Online, Presencial..." className={inputClass} />
               </Field>
               <Field label="Fecha de inicio" htmlFor="producto-fecha-inicio-texto">
-                <input id="producto-fecha-inicio-texto" {...register('fecha_inicio_texto')} placeholder="DD-MM-YYYY" className={inputClass} />
+                <input autoComplete="off" id="producto-fecha-inicio-texto" {...register('fecha_inicio_texto')} placeholder="DD-MM-YYYY" className={inputClass} />
               </Field>
             </FilaCampos>
           </div>
@@ -369,10 +387,10 @@ export default function ProductFormDialog({ open, onClose, product, onSubmit }: 
             </div>
             <FilaCampos columnas={3}>
               <Field label="Plazas de la convocatoria" htmlFor="producto-plazas-totales" error={textoError(errors.plazas_totales)}>
-                <input id="producto-plazas-totales" {...register('plazas_totales')} type="number" min="0" placeholder="en blanco: sin cuenta de plazas" className={inputClass} />
+                <input autoComplete="off" id="producto-plazas-totales" {...register('plazas_totales')} type="number" min="0" placeholder="en blanco: sin cuenta de plazas" className={inputClass} />
               </Field>
               <Field label="Ya ocupadas antes del CRM" htmlFor="producto-plazas-ocupadas-previas" error={textoError(errors.plazas_ocupadas_previas)}>
-                <input id="producto-plazas-ocupadas-previas" {...register('plazas_ocupadas_previas')} type="number" min="0" placeholder="0" className={inputClass} />
+                <input autoComplete="off" id="producto-plazas-ocupadas-previas" {...register('plazas_ocupadas_previas')} type="number" min="0" placeholder="0" className={inputClass} />
               </Field>
               <Field label="Cierre de convocatoria" htmlFor="producto-fecha-cierre-convocatoria" error={textoError(errors.fecha_cierre_convocatoria)}>
                 <input id="producto-fecha-cierre-convocatoria" {...register('fecha_cierre_convocatoria')} type="date" className={inputClass} />
@@ -417,7 +435,7 @@ export default function ProductFormDialog({ open, onClose, product, onSubmit }: 
                   </span>
                 </summary>
                 <div className="px-3 pb-3">
-                  <textarea
+                  <textarea autoComplete="off"
                     {...register(f.name as any)}
                     rows={6}
                     placeholder={`Pegado por el scraper. Si está vacío puedes editarlo.`}

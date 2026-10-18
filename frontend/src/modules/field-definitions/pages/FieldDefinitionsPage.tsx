@@ -327,7 +327,7 @@ function FieldEditorDialog({ field, onChange, onSave, onClose, isEdit }: FieldEd
             11px; ahora Field pone la etiqueta y la ayuda, e inputClass el campo. */}
         <div className="p-5 space-y-4">
           <Field label="Etiqueta visible" required htmlFor="campo-etiqueta">
-            <input
+            <input autoComplete="off"
               id="campo-etiqueta"
               autoFocus
               value={field.label}
@@ -343,7 +343,7 @@ function FieldEditorDialog({ field, onChange, onSave, onClose, isEdit }: FieldEd
               htmlFor="campo-clave"
               hint="Si lo dejas vacío se genera de la etiqueta. NO se puede cambiar después."
             >
-              <input
+              <input autoComplete="off"
                 id="campo-clave"
                 value={field.field_key}
                 onChange={(e) => patch({ field_key: e.target.value })}
@@ -366,7 +366,7 @@ function FieldEditorDialog({ field, onChange, onSave, onClose, isEdit }: FieldEd
 
           {field.type === 'select' && (
             <Field label="Opciones (una por línea)" htmlFor="campo-opciones">
-              <textarea
+              <textarea autoComplete="off"
                 id="campo-opciones"
                 value={(field.options?.choices || []).join('\n')}
                 onChange={(e) => setOptionsFromText(e.target.value)}

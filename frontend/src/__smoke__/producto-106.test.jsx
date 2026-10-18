@@ -66,7 +66,18 @@ describe('Producto (#106)', () => {
     fireEvent.change(screen.getByLabelText('Nº módulos'), { target: { value: '-2' } });
     await act(async () => { fireEvent.submit(container.querySelector('form')); });
     await waitFor(() => expect(avisos.toast).toHaveBeenCalledWith(expect.objectContaining({
-      description: 'Nº módulos: Escribe un número entero, 0 o mayor',
+      title: 'Revisa «Nº módulos»', description: 'Escribe un número entero, 0 o mayor',
+    })));
+  });
+
+  // Como en los demás formularios: una frase, sin «Campo: mensaje · …».
+  it('sin nombre y con Nº módulos mal: los dos en el mismo aviso', async () => {
+    const { container } = await abrir();
+    fireEvent.change(screen.getByLabelText('Nº módulos'), { target: { value: '-2' } });
+    await act(async () => { fireEvent.submit(container.querySelector('form')); });
+    await waitFor(() => expect(avisos.toast).toHaveBeenLastCalledWith(expect.objectContaining({
+      title: 'Faltan datos',
+      description: 'Falta el nombre en «Nombre» y un número entero (0 o más) en «Nº módulos».',
     })));
   });
 
@@ -83,7 +94,7 @@ describe('Producto (#106)', () => {
   // Visto en la prueba a mano: vacío decía «al menos 2 caracteres».
   it('sin nombre dice que es obligatorio; con una letra, que es corto', () => {
     const vacio = productSchema.safeParse({ nombre: '' });
-    expect(vacio.error.issues[0].message).toBe('Es obligatorio: escríbelo');
+    expect(vacio.error.issues[0].message).toBe('Falta el nombre');
     const corto = productSchema.safeParse({ nombre: 'A' });
     expect(corto.error.issues[0].message).toBe('El nombre debe tener al menos 2 caracteres');
   });

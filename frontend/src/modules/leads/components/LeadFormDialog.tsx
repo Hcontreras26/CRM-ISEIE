@@ -225,7 +225,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
             <FilaCampos>
               <Field label={(customValues as any)?._sin_nombre ? 'Nombre (se generará automáticamente)' : 'Nombre'}
                 required={!(customValues as any)?._sin_nombre} error={errors.nombre?.message} htmlFor="prospecto-nombre">
-                <input
+                <input autoComplete="off"
                   id="prospecto-nombre"
                   {...register('nombre')}
                   placeholder={(customValues as any)?._sin_nombre ? 'Se autorellenará como Anónimo (tel ...)' : 'Nombre completo'}
@@ -234,7 +234,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                 />
               </Field>
               <Field label="Email" error={errors.email?.message} hint="Opcional si pones teléfono" htmlFor="prospecto-email">
-                <input id="prospecto-email" {...register('email')} type="email" placeholder="correo@ejemplo.com (opcional)" className={inputClass} />
+                <input autoComplete="off" id="prospecto-email" {...register('email')} type="email" placeholder="correo@ejemplo.com (opcional)" className={inputClass} />
               </Field>
             </FilaCampos>
 
@@ -288,7 +288,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
             <FilaCampos>
               <Field label="Teléfono" error={errors.telefono?.message} hint="Opcional si pones email" htmlFor="prospecto-telefono">
                 <div className="relative">
-                  <input id="prospecto-telefono" {...register('telefono')} placeholder="+34 600 000 000 (opcional)" className={inputClass + ' pr-14'} />
+                  <input autoComplete="off" id="prospecto-telefono" {...register('telefono')} placeholder="+34 600 000 000 (opcional)" className={inputClass + ' pr-14'} />
                   {(() => {
                     const c = detectCountryFromPhone(watchedTelefono);
                     if (!c) return null;
@@ -359,7 +359,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                   </div>
                   {modoContacto !== 'numero' && (
                     <div className="flex-1 min-w-0">
-                      <input {...register('whatsapp_usuario')}
+                      <input autoComplete="off" {...register('whatsapp_usuario')}
                         aria-label="Usuario de WhatsApp"
                         placeholder="@usuario o como lo tengas guardado"
                         className={inputClass} />
@@ -418,7 +418,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                       {f.type === 'textarea' ? (
                         // `h-auto`, no `h-20`: en la hoja de estilos `h-9` (de
                         // inputClass) va después de `h-20` y la dejaba en 36 px.
-                        <textarea
+                        <textarea autoComplete="off"
                           id={`prospecto-cf-${f.field_key}`}
                           value={(customValues[f.field_key] as string) || ''}
                           onChange={e => setCustomValues({ ...customValues, [f.field_key]: e.target.value })}
@@ -447,7 +447,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
                           <span className="text-sm">Sí</span>
                         </label>
                       ) : (
-                        <input
+                        <input autoComplete="off"
                           id={`prospecto-cf-${f.field_key}`}
                           type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
                           value={(customValues[f.field_key] as string) || ''}
@@ -463,7 +463,7 @@ export default function LeadFormDialog({ open, onClose, lead, onSubmit }: Props)
             )}
 
             <Field label="Notas" htmlFor="prospecto-notas">
-              <textarea
+              <textarea autoComplete="off"
                 id="prospecto-notas"
                 {...register('notas')}
                 placeholder="Notas adicionales sobre el lead..."

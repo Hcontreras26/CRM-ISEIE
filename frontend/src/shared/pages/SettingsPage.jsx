@@ -449,14 +449,14 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
         </div>
         <div className="space-y-3">
           <Field label="Nombre" required htmlFor="editar-usuario-nombre">
-            <input id="editar-usuario-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputClass} />
+            <input autoComplete="off" id="editar-usuario-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputClass} />
           </Field>
           <div>
             <Field label="Email" disabled={!isSuperadmin} htmlFor="editar-usuario-email"
               hint={isSuperadmin
                 ? 'Es con lo que entra: al cambiarlo, con el viejo ya no podrá, y se cierran sus sesiones. Se le avisa por correo en la dirección vieja. Si recibe prospectos por Make, cámbialo también allí.'
                 : 'Solo un superadmin puede cambiar el correo.'}>
-              <input id="editar-usuario-email" value={email} onChange={(e) => setEmail(e.target.value)} type="email" maxLength={255}
+              <input autoComplete="off" id="editar-usuario-email" value={email} onChange={(e) => setEmail(e.target.value)} type="email" maxLength={255}
                 readOnly={!isSuperadmin} disabled={!isSuperadmin}
                 className={`${inputClass} ${isSuperadmin ? '' : 'opacity-60 cursor-not-allowed'}`} />
             </Field>
@@ -514,7 +514,7 @@ function EditUserModal({ user, projects, onClose, onSaved, empresas, faltaMigrac
             </div>
           </Field>
           <Field label="Teléfono (WhatsApp)" htmlFor="editar-usuario-tel" hint="Se usa para el widget de WhatsApp y el contacto del gestor.">
-            <input id="editar-usuario-tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+34 600 000 000" className={inputClass} />
+            <input autoComplete="off" id="editar-usuario-tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+34 600 000 000" className={inputClass} />
           </Field>
           <Field label="Proyectos asignados">
             {/* Agrupados por empresa, con «Marcar todos» y, para un admin, la
@@ -654,10 +654,10 @@ function InviteUserModal({ projects, onClose, onCreated, empresas, faltaMigracio
         </div>
         <div className="space-y-3">
           <Field label="Nombre y apellido" required htmlFor="invitar-nombre">
-            <input id="invitar-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputClass} placeholder="Ej: Fabiola Comercial" />
+            <input autoComplete="off" id="invitar-nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} className={inputClass} placeholder="Ej: Fabiola Comercial" />
           </Field>
           <Field label="Email" required htmlFor="invitar-email">
-            <input id="invitar-email" value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputClass} placeholder="persona@empresa.com" />
+            <input autoComplete="off" id="invitar-email" value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputClass} placeholder="persona@empresa.com" />
           </Field>
           <Field label="Rol" required htmlFor="invitar-rol">
             <Select

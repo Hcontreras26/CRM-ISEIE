@@ -642,7 +642,7 @@ export default function TutoresPage() {
         <div className="bg-card border border-border rounded-lg overflow-hidden">
           <div className="relative border-b border-border">
             <MagnifyingGlass size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input
+            <input autoComplete="off"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar tutor por nombre o correo…"
@@ -849,19 +849,19 @@ export default function TutoresPage() {
                 <h3 className="text-tabla uppercase text-muted-foreground">Quién es</h3>
                 <FilaCampos>
                   <Field label="Nombre y apellidos" required htmlFor="alta-nombre" className="sm:col-span-2">
-                    <input id="alta-nombre" name="nombre" required autoFocus className={inputClass} />
+                    <input autoComplete="off" id="alta-nombre" name="nombre" required autoFocus className={inputClass} />
                   </Field>
                   <Field label="Correo" required htmlFor="alta-email" className="sm:col-span-2" hint="Es con lo que entra al CRM.">
-                    <input id="alta-email" name="email" type="email" required className={inputClass} />
+                    <input autoComplete="off" id="alta-email" name="email" type="email" required className={inputClass} />
                   </Field>
                   <Field label="DNI / NIF" htmlFor="alta-dni">
-                    <input id="alta-dni" name="dniNif" className={inputClass} />
+                    <input autoComplete="off" id="alta-dni" name="dniNif" className={inputClass} />
                   </Field>
                   <Field label="Teléfono" htmlFor="alta-tel">
-                    <input id="alta-tel" name="telefono" className={inputClass} />
+                    <input autoComplete="off" id="alta-tel" name="telefono" className={inputClass} />
                   </Field>
                   <Field label="IBAN" htmlFor="alta-iban" className="sm:col-span-2" hint="Donde se le paga. Puedes dejarlo para más adelante.">
-                    <input id="alta-iban" name="iban" placeholder="ES00 0000 0000 0000 0000 0000"
+                    <input autoComplete="off" id="alta-iban" name="iban" placeholder="ES00 0000 0000 0000 0000 0000"
                       className={`${inputClass} tabular-nums`} />
                   </Field>
                 </FilaCampos>
@@ -945,7 +945,7 @@ export default function TutoresPage() {
                     />
                   </Field>
                   <Field label="%" htmlFor="alta-curso-pct">
-                    <input id="alta-curso-pct" type="number" step="0.5" min="0" max="100" value={nuevoPct}
+                    <input autoComplete="off" id="alta-curso-pct" type="number" step="0.5" min="0" max="100" value={nuevoPct}
                       onChange={(e) => setNuevoPct(e.target.value)}
                       className={`${inputClass} tabular-nums`} />
                   </Field>
@@ -1033,7 +1033,7 @@ export default function TutoresPage() {
 
             <FilaCampos columnas={3}>
               <Field label="Porcentaje" required htmlFor="colab-pct">
-                <input id="colab-pct" name="pct" type="number" step="0.5" min="0" max="100" defaultValue="10" required
+                <input autoComplete="off" id="colab-pct" name="pct" type="number" step="0.5" min="0" max="100" defaultValue="10" required
                   className={inputClass} />
               </Field>
               <Field label="Desde" required htmlFor="colab-desde">
@@ -1077,26 +1077,26 @@ export default function TutoresPage() {
             </div>
 
             <Field label="Nombre" htmlFor="datos-nombre">
-              <input id="datos-nombre" value={datos.nombre}
+              <input autoComplete="off" id="datos-nombre" value={datos.nombre}
                 onChange={(e) => setDatos({ ...datos, nombre: e.target.value })}
                 className={inputClass} />
             </Field>
 
             <FilaCampos>
               <Field label="DNI / NIF" htmlFor="datos-dni">
-                <input id="datos-dni" value={datos.dniNif}
+                <input autoComplete="off" id="datos-dni" value={datos.dniNif}
                   onChange={(e) => setDatos({ ...datos, dniNif: e.target.value })}
                   className={inputClass} />
               </Field>
               <Field label="Teléfono" htmlFor="datos-tel">
-                <input id="datos-tel" value={datos.telefono}
+                <input autoComplete="off" id="datos-tel" value={datos.telefono}
                   onChange={(e) => setDatos({ ...datos, telefono: e.target.value })}
                   className={inputClass} />
               </Field>
             </FilaCampos>
 
             <Field label="IBAN" htmlFor="datos-iban" hint="Donde se le paga. Los espacios se quitan solos.">
-              <input id="datos-iban" value={datos.iban}
+              <input autoComplete="off" id="datos-iban" value={datos.iban}
                 onChange={(e) => setDatos({ ...datos, iban: e.target.value })}
                 placeholder="ES00 0000 0000 0000 0000 0000"
                 className={`${inputClass} tabular-nums`} />
@@ -1105,7 +1105,7 @@ export default function TutoresPage() {
             {/* El banco, suelto y no deducido del IBAN: hay tutores fuera de
                 Europa, y ahi el numero de cuenta no lleva codigo de entidad. */}
             <Field label="Banco" htmlFor="datos-banco">
-              <input id="datos-banco" value={datos.banco}
+              <input autoComplete="off" id="datos-banco" value={datos.banco}
                 onChange={(e) => setDatos({ ...datos, banco: e.target.value })}
                 placeholder="BBVA, Santander, Galicia…"
                 className={inputClass} />
@@ -1115,7 +1115,7 @@ export default function TutoresPage() {
                 con el viejo ya no se entra. De ahi la casilla de reenviar. */}
             <Field label="Correo" htmlFor="datos-email" disabled={!esSuperadmin}
               hint={esSuperadmin ? undefined : 'Solo un superadmin puede cambiar el correo.'}>
-              <input id="datos-email" type="email" value={datos.email}
+              <input autoComplete="off" id="datos-email" type="email" value={datos.email}
                 onChange={(e) => setDatos({ ...datos, email: e.target.value })}
                 readOnly={!esSuperadmin} disabled={!esSuperadmin}
                 className={`${inputClass} ${esSuperadmin ? '' : 'opacity-60 cursor-not-allowed'}`} />
@@ -1179,7 +1179,7 @@ export default function TutoresPage() {
 
             <FilaCampos columnas={3}>
               <Field label="Porcentaje" required htmlFor="editar-colab-pct">
-                <input id="editar-colab-pct" name="pct" type="number" step="0.5" min="0" max="100" required
+                <input autoComplete="off" id="editar-colab-pct" name="pct" type="number" step="0.5" min="0" max="100" required
                   defaultValue={Number(editColab.pct)}
                   className={`${inputClass} tabular-nums`} />
               </Field>
