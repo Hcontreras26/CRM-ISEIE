@@ -78,6 +78,60 @@ describe('Nueva venta (#106)', () => {
     expect(container.querySelector('input[type="number"][required]')).not.toBeNull();
   });
 
+  // Con noValidate el navegador ya no comprueba min, max ni los céntimos de
+  // step="0.01": los comprueba el CRM, los mismos, diciendo la casilla.
+  describe('los límites de cada casilla, ahora los dice el CRM', () => {
+    const precioBase = (c) => c.querySelector('input[type="number"][required]');
+    const preparar = () => {
+      const r = abrir();
+      fireEvent.change(r.container.querySelector('#venta-producto-contratado'), { target: { value: 'Curso X' } });
+      fireEvent.change(precioBase(r.container), { target: { value: '500' } });
+      return r;
+    };
+    const enviarYVer = async (container, title) => {
+      fireEvent.submit(container.querySelector('form'));
+      await waitFor(() => expect(api.toast).toHaveBeenCalledWith(expect.objectContaining({ title, variant: 'destructive' })));
+      expect(api.create).not.toHaveBeenCalled();
+    };
+
+    it('precio con más de 2 decimales', async () => {
+      const { container } = preparar();
+      fireEvent.change(precioBase(container), { target: { value: '500.005' } });
+      await enviarYVer(container, 'Demasiados decimales');
+    });
+
+    it('descuento negativo', async () => {
+      const { container } = preparar();
+      fireEvent.click(screen.getByRole('combobox', { name: 'Descuento' }));
+      fireEvent.mouseDown(screen.getByRole('option', { name: 'Monto fijo (€)' }));
+      fireEvent.change(container.querySelector('#venta-descuento-valor'), { target: { value: '-50' } });
+      await enviarYVer(container, 'Descuento no válido');
+    });
+
+    it('IVA de más de 100', async () => {
+      const { container } = preparar();
+      fireEvent.change(container.querySelector('input[type="number"][max="100"]'), { target: { value: '150' } });
+      await enviarYVer(container, 'IVA no válido');
+    });
+
+    it('más de 60 cuotas', async () => {
+      const { container } = preparar();
+      fireEvent.click(screen.getByRole('combobox', { name: /Método de pago/i }));
+      fireEvent.mouseDown(await screen.findByRole('option', { name: 'Fraccionado' }));
+      fireEvent.change(container.querySelector('#venta-num-cuotas'), { target: { value: '61' } });
+      await enviarYVer(container, 'Demasiadas cuotas');
+    });
+
+    it('lo que estaba bien se sigue registrando igual', async () => {
+      const { container } = preparar();
+      fireEvent.change(precioBase(container), { target: { value: '499.99' } });
+      fireEvent.click(screen.getByRole('button', { name: /Pagó TODO/i }));
+      fireEvent.submit(container.querySelector('form'));
+      await waitFor(() => expect(api.create).toHaveBeenCalledTimes(1));
+      expect(api.create.mock.calls[0][0]).toMatchObject({ importe_total: 499.99 });
+    });
+  });
+
   // Visto en la prueba a mano: se registraba a uno, se cerraba, y al abrir el
   // de otro ya estaban puestos el producto y el precio del anterior.
   describe('cada apertura empieza vacía', () => {

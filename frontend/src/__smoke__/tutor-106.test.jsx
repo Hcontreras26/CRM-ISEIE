@@ -24,10 +24,15 @@ vi.mock('@/modules/tutores/api/tutores.api', () => ({
     ] }),
     colaboraciones: vi.fn().mockResolvedValue({ success: true, data: [] }),
     ajustes: vi.fn().mockResolvedValue({ success: true, data: { aplica_desde: '2026-08-01', pct_por_defecto: 10 } }),
+    alta: vi.fn().mockResolvedValue({ success: false, error: 'no' }),
+    crearColaboracion: vi.fn().mockResolvedValue({ success: false, error: 'no' }),
+    editarColaboracion: vi.fn().mockResolvedValue({ success: false }),
   },
 }));
 
 import TutoresPage from '@/modules/tutores/pages/TutoresPage';
+import { toast } from '@/shared/hooks/useToast';
+import { tutoresApi } from '@/modules/tutores/api/tutores.api';
 
 const esperar = () => act(async () => { await new Promise((ok) => setTimeout(ok, 0)); });
 const abrirPagina = async () => {
@@ -78,5 +83,107 @@ describe('Tutor (#106)', () => {
     expect(pct.className).toMatch(/bg-muted\/50/);
     expect(screen.getByLabelText('Hasta').className).toMatch(/bg-muted\/50/);
     expect(pct.closest('div.min-w-0').parentElement.className).toMatch(/grid-cols-1 sm:grid-cols-3/);
+  });
+});
+
+// Visto en la prueba a mano de la #106: el globo «Rellene este campo» del
+// navegador. Ahora avisa el CRM, comprobando lo mismo que comprobaba el navegador.
+describe('Tutor: avisa el CRM, no el navegador (#106)', () => {
+  beforeEach(() => { vi.clearAllMocks(); });
+  afterEach(() => cleanup());
+  const aviso = (title) => expect(toast).toHaveBeenCalledWith(expect.objectContaining({ title, variant: 'destructive' }));
+  const enviar = async (campo) => { await act(async () => { fireEvent.submit(campo.closest('form')); }); };
+  const escribir = (campo, value) => fireEvent.change(campo, { target: { value } });
+
+  it('nuevo tutor: sin nombre, sin correo bueno, sin contraseña o con el % fuera de 0-100, no se da de alta', async () => {
+    await abrirPagina();
+    fireEvent.click(screen.getByRole('button', { name: /Nuevo tutor/ }));
+    const nombre = screen.getByLabelText(/^Nombre y apellidos/);
+    expect(nombre.closest('form').noValidate).toBe(true);
+    await enviar(nombre);
+    aviso('Falta el nombre');
+    escribir(nombre, 'Ana Tutora');
+    await enviar(nombre);
+    aviso('Correo no válido');
+    escribir(screen.getByLabelText(/^Correo/), 'ana@');
+    await enviar(nombre);
+    aviso('Correo no válido');
+    escribir(screen.getByLabelText(/^Correo/), 'ana@prueba.local');
+    // Sin correos a tutores, la contraseña es obligatoria (required={sinCorreos}).
+    escribir(screen.getByLabelText('Contraseña'), '');
+    await enviar(nombre);
+    aviso('Falta la contraseña');
+    escribir(screen.getByLabelText('Contraseña'), 'corta');
+    await enviar(nombre);
+    aviso('Contraseña demasiado corta');
+    escribir(screen.getByLabelText('Contraseña'), 'larga-de-sobra');
+    for (const malo of ['150', '-1', '7.3']) {
+      escribir(screen.getByLabelText('%'), malo);
+      await enviar(nombre);
+      aviso('Porcentaje no válido');
+    }
+    expect(tutoresApi.alta).not.toHaveBeenCalled();
+  });
+
+  it('nuevo tutor: con todo bien, se da de alta como antes (el % vacío tampoco lo paraba)', async () => {
+    await abrirPagina();
+    fireEvent.click(screen.getByRole('button', { name: /Nuevo tutor/ }));
+    escribir(screen.getByLabelText(/^Nombre y apellidos/), 'Ana Tutora');
+    escribir(screen.getByLabelText(/^Correo/), 'ana@prueba.local');
+    escribir(screen.getByLabelText('%'), '');
+    await enviar(screen.getByLabelText(/^Nombre y apellidos/));
+    expect(tutoresApi.alta).toHaveBeenCalledWith(expect.objectContaining({ nombre: 'Ana Tutora', email: 'ana@prueba.local' }));
+  });
+
+  it('añadir formación: el porcentaje de 0 a 100 (con medios) y la fecha «Desde»', async () => {
+    await abrirPagina();
+    await elegirTutora();
+    fireEvent.click(screen.getByRole('button', { name: /Añadir formación/ }));
+    const pct = screen.getByLabelText(/^Porcentaje/);
+    expect(pct.closest('form').noValidate).toBe(true);
+    for (const malo of ['150', '-1', '7.3', '']) {
+      escribir(pct, malo);
+      await enviar(pct);
+      aviso('Porcentaje no válido');
+    }
+    escribir(pct, '7.5');
+    escribir(screen.getByLabelText(/^Desde/), '');
+    await enviar(pct);
+    aviso('Falta la fecha');
+    expect(tutoresApi.crearColaboracion).not.toHaveBeenCalled();
+    escribir(screen.getByLabelText(/^Desde/), '2026-09-01');
+    await enviar(pct);
+    expect(tutoresApi.crearColaboracion).toHaveBeenCalledWith(expect.objectContaining({ pct: 7.5, desde: '2026-09-01' }));
+  });
+
+  it('editar formación: lo mismo, el porcentaje y la fecha «Desde»', async () => {
+    const antes = tutoresApi.colaboraciones.getMockImplementation();
+    tutoresApi.colaboraciones.mockResolvedValue({ success: true, data: [{
+      id: 7, tutor_id: 3, product_id: 1, pct: '10', vigente_desde: '2026-08-01', vigente_hasta: null, activa: true,
+      notas: null, tutor: 'Tutora Prueba', formacion: 'Curso X', precio: '100', project_id: 1, proyecto: 'ISEIE',
+      rige_hoy: true, entrego_foto: false, entrego_video: false, modulos_pct: 0,
+    }] });
+    try {
+      await abrirPagina();
+      await elegirTutora();
+      fireEvent.click(screen.getByRole('button', { name: /^Editar$/ }));
+      const pct = screen.getByLabelText(/^Porcentaje/);
+      expect(pct.closest('form').noValidate).toBe(true);
+      for (const malo of ['101', '-0.5', '12.25', '']) {
+        escribir(pct, malo);
+        await enviar(pct);
+        aviso('Porcentaje no válido');
+      }
+      escribir(pct, '12.5');
+      escribir(screen.getByLabelText(/^Desde/), '');
+      await enviar(pct);
+      aviso('Falta la fecha');
+      expect(tutoresApi.editarColaboracion).not.toHaveBeenCalled();
+      escribir(screen.getByLabelText(/^Desde/), '2026-09-01');
+      await enviar(pct);
+      expect(tutoresApi.editarColaboracion).toHaveBeenCalledWith(7, expect.objectContaining({ pct: 12.5, desde: '2026-09-01' }));
+    } finally {
+      tutoresApi.colaboraciones.mockImplementation(antes);
+    }
   });
 });
