@@ -42,6 +42,16 @@ export const VERSIONES = [
             "boton": null
           },
           {
+            "titulo": "Cada empresa numera sus diplomas",
+            "texto": "El número de expediente lleva el prefijo de la empresa que expide y cuenta desde 000001: CEDIA-2026-000001 (Psiko, ISEIH, Fono, ISAEG, ISECD, ISEF e ISSLOGG), ISEIE-2026-000001, ICTESS-2026-000001 y LTS-2026-000001 (Academia IA).",
+            "roles": [
+              "admin",
+              "superadmin"
+            ],
+            "ruta": null,
+            "boton": null
+          },
+          {
             "titulo": "El temario, desde la página del curso",
             "texto": "Antes de aprobar, «Sincronizar módulos con el producto» copia los módulos de la página del curso, y se pueden retocar a mano. Un nombre mal escrito se corrige sin revocar: mismo número de expediente y mismo QR, y queda anotado quién y por qué.",
             "roles": [
