@@ -230,9 +230,15 @@ export const tutoresApi = {
   colaboraciones: (tutorId?: number | null) =>
     client.get(`/tutores/colaboraciones${tutorId ? `?tutorId=${tutorId}` : ''}`) as Promise<ApiResponse<Colaboracion[]>>,
 
+  /** Con `anadirAlCampus`, si la formación es de un campus en el que el tutor no
+   *  está, se le da de alta ahí en el mismo paso (#223). Sin él, ese caso es un
+   *  409 `OTRO_PROYECTO` con el campus en `data`. */
   crearColaboracion: (datos: {
     tutorId: number; productId: number; pct: number; desde: string; hasta?: string | null; notas?: string;
-  }) => client.post('/tutores/colaboraciones', datos) as Promise<ApiResponse<Colaboracion>>,
+    anadirAlCampus?: boolean;
+  }) => client.post('/tutores/colaboraciones', datos) as Promise<ApiResponse<Colaboracion & {
+    campusAnadido?: { projectId: number; proyecto: string | null };
+  }>>,
 
   /** Mover una comision entre pendiente, notificada y falta_factura. Pagar y
    *  revertir NO pasan por aqui: tienen su propia llamada porque mueven dinero. */
