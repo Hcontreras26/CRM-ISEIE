@@ -7,6 +7,7 @@ import client from '@/shared/api/client';
 import PageHeader from '@/shared/components/ui/PageHeader';
 import EmptyState from '@/shared/components/ui/EmptyState';
 import { Button } from '@/shared/components/ui/button';
+import ConfirmDialog from '@/shared/components/ui/ConfirmDialog';
 import BuscadorCurso from '../components/BuscadorCurso';
 import Entregables from '../components/Entregables';
 import CampoCobraDesde from '../components/CampoCobraDesde';
@@ -15,6 +16,7 @@ import { avisoCambioCorreo, confirmacionCambioCorreo, problemaDeContrasena } fro
 import {
   cursosParaElAlta, avisoDelAlta, type CursoDelAlta, type CursoQueFallo,
   cobraDesdeActual, hayQueMandarCobraDesde, confirmacionCobraDesde, avisoCobraDesde,
+  campusDelRechazo, formacionesConCampus, type CampusDeLaFormacion, type FormacionConCampus,
 } from '../lib/colaboraciones';
 
 // Tutores y sus colaboraciones.
@@ -132,6 +134,16 @@ export default function TutoresPage() {
   // se lleva por delante el historico de por que se le pago lo que se le pago.
   const [editColab, setEditColab] = useState<Colaboracion | null>(null);
   const [procesando, setProcesando] = useState(false);
+  // «Añadir formación» ofrece las de TODOS los campus de quien asigna, cada una
+  // con el suyo (#223), no solo las del campus de arriba.
+  const [formacionesColab, setFormacionesColab] = useState<FormacionConCampus[] | null>(null);
+  // La formación es de un campus en el que el tutor no está: lo que se iba a
+  // guardar, esperando a que se diga si se le añade a ese campus.
+  const [otroCampus, setOtroCampus] = useState<{
+    campus: CampusDeLaFormacion;
+    datos: Parameters<typeof tutoresApi.crearColaboracion>[0];
+    formacion: string;
+  } | null>(null);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -150,6 +162,24 @@ export default function TutoresPage() {
       .catch(() => setFormaciones([]));
   }, [projectId]);
 
+  // Las de «Añadir formación»: las de todos los campus de quien asigna, cada una
+  // con su campus (#223). Antes eran solo las del campus elegido arriba —y sin
+  // ninguno elegido, ninguna—. Se piden al abrirlo por primera vez; si cambian
+  // sus campus, se vuelven a pedir.
+  useEffect(() => { setFormacionesColab(null); }, [projects]);
+  useEffect(() => {
+    if (!popupColab || formacionesColab) return;
+    const suyos = (projects || []).filter((p) => p?.id && p.id !== -1);
+    if (!suyos.length) { setFormacionesColab([]); return; }
+    let vivo = true;
+    Promise.all(suyos.map((p) =>
+      client.get(`/products?projectId=${p.id}&limit=500`)
+        .then((r) => ({ projectId: p.id, campus: p.nombre, formaciones: (r.success ? (r.data || []) : []) as Formacion[] }))
+        .catch(() => ({ projectId: p.id, campus: p.nombre, formaciones: [] as Formacion[] }))))
+      .then((tandas) => { if (vivo) setFormacionesColab(formacionesConCampus(tandas)); });
+    return () => { vivo = false; };
+  }, [popupColab, formacionesColab, projects]);
+
   // El arranque del modulo manda sobre la fecha por defecto: si las comisiones
   // empiezan en agosto, proponer hoy solo invita a ponerlo mal.
   useEffect(() => {
@@ -163,13 +193,14 @@ export default function TutoresPage() {
 
   // Cerrar con Escape, que es lo que hace todo el mundo antes de buscar la X.
   useEffect(() => {
-    if (!popupAlta && !popupColab) return;
+    // Con la pregunta del campus abierta, Escape la cierra solo a ella.
+    if ((!popupAlta && !popupColab) || otroCampus) return;
     const alPulsar = (e: KeyboardEvent) => {
       if (e.key === 'Escape') { setPopupAlta(false); setPopupColab(false); }
     };
     window.addEventListener('keydown', alPulsar);
     return () => window.removeEventListener('keydown', alPulsar);
-  }, [popupAlta, popupColab]);
+  }, [popupAlta, popupColab, otroCampus]);
 
   function anadirCursoAlAlta() {
     const id = Number(nuevoCurso);
@@ -445,21 +476,57 @@ export default function TutoresPage() {
     e.preventDefault();
     if (!elegido) return;
     const f = new FormData(e.currentTarget);
+    const productId = Number(f.get('productId'));
     setGuardando(true);
     try {
-      const r = await tutoresApi.crearColaboracion({
+      const datos = {
         tutorId: elegido.id,
-        productId: Number(f.get('productId')),
+        productId,
         pct: Number(f.get('pct')),
         desde: String(f.get('desde')),
         hasta: String(f.get('hasta') || '') || null,
-      });
-      if (!r.success) throw new Error(r.error || 'no se pudo');
+      };
+      try {
+        const r = await tutoresApi.crearColaboracion(datos);
+        if (!r.success) throw new Error(r.error || 'no se pudo');
+      } catch (err) {
+        // Es de un campus en el que no está: se pregunta si añadirlo, en vez
+        // de dejar un «no» sin salida (#223).
+        const campusDeLaFormacion = campusDelRechazo(err);
+        if (!campusDeLaFormacion) throw err;
+        setOtroCampus({
+          campus: campusDeLaFormacion,
+          datos,
+          formacion: formacionesColab?.find((x) => x.id === productId)?.nombre || 'Esa formación',
+        });
+        return;
+      }
       setPopupColab(false);
       cargarColabs(elegido);
       cargar();
     } catch (err) {
       toast({ title: 'No se ha podido añadir', description: err instanceof Error ? err.message : '', variant: 'destructive' });
+    } finally { setGuardando(false); }
+  }
+
+  /** «Sí, añádela a este campus»: el mismo alta, con `anadirAlCampus`. */
+  async function anadirAlCampusYAsignar() {
+    if (!otroCampus || !elegido) return;
+    const { campus: c, datos } = otroCampus;
+    const nombreCampus = c.proyecto || 'ese campus';
+    setGuardando(true);
+    try {
+      const r = await tutoresApi.crearColaboracion({ ...datos, anadirAlCampus: true });
+      if (!r.success) throw new Error(r.error || 'no se pudo');
+      toast({ title: `Añadida a ${nombreCampus} y formación asignada`, description: `${elegido.nombre} ya está en ${nombreCampus}.` });
+      setOtroCampus(null);
+      setPopupColab(false);
+      cargarColabs(elegido);
+      cargar();
+    } catch (err) {
+      // 403 si ese campus no es de quien lo pide: el servidor dice por qué.
+      toast({ title: `No se ha podido añadir a ${nombreCampus}`, description: err instanceof Error ? err.message : '', variant: 'destructive' });
+      setOtroCampus(null);
     } finally { setGuardando(false); }
   }
 
@@ -978,15 +1045,24 @@ export default function TutoresPage() {
               </button>
             </div>
 
-            {/* Con cientos de cursos, un desplegable no vale: hay que poder escribir. */}
+            {/* Con cientos de cursos, un desplegable no vale: hay que poder escribir.
+                Las de todos los campus de quien asigna, cada una con el suyo a la
+                derecha (#223). Una de un campus en el que el tutor no está se
+                puede elegir: al guardar se pregunta si añadirlo a ese campus. */}
             <BuscadorCurso
-              cursos={formaciones}
+              cursos={formacionesColab ?? []}
               valor={cursoColab}
               onElegir={setCursoColab}
               excluir={colabs.map((c) => c.product_id)}
+              placeholder={formacionesColab ? 'Escribe para buscar un curso o un campus…' : 'Cargando las formaciones…'}
               autoFocus
             />
             <input type="hidden" name="productId" value={cursoColab ?? ''} />
+            {elegido.marcas && (
+              <p className="text-[11px] text-muted-foreground">
+                Está en: {elegido.marcas}. Si eliges una de otro campus, te preguntaremos si añadirlo.
+              </p>
+            )}
 
             <div className="grid grid-cols-3 gap-2">
               <label className="text-xs text-muted-foreground">
@@ -1020,6 +1096,23 @@ export default function TutoresPage() {
           </form>
         </div>
       )}
+
+      {/* La formación es de un campus en el que no está (#223). */}
+      <ConfirmDialog
+        open={!!otroCampus && !!elegido}
+        title={`Esta tutora no está en ${otroCampus?.campus.proyecto || 'ese campus'}`}
+        message={otroCampus && elegido ? (
+          <>
+            «{otroCampus.formacion}» es de <strong>{otroCampus.campus.proyecto || 'otro campus'}</strong>. ¿Quieres añadirla a
+            este campus? {elegido.nombre} queda en {otroCampus.campus.proyecto || 'ese campus'} con esta formación asignada: las
+            dos cosas a la vez.
+          </>
+        ) : null}
+        confirmLabel={`Añadir a ${otroCampus?.campus.proyecto || 'ese campus'}`}
+        loading={guardando}
+        onConfirm={anadirAlCampusYAsignar}
+        onCancel={() => setOtroCampus(null)}
+      />
 
       {/* Editar los datos del tutor.
           Se abre con lo que ya tiene relleno, a proposito: `guardarPerfil`

@@ -41,6 +41,8 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<UserRole, PermissionMap> = {
     'tasks.view_all': true, 'tasks.view_own': true, 'tasks.create': true, 'tasks.assign': true, 'tasks.edit': true, 'tasks.delete': true, 'tasks.close': true, 'tasks.manage': true,
     // Facturas de colaboradores (#202): las de las empresas de sus campus. Espejo del backend.
     'facturas_colaborador.ver_todas': true, 'facturas_colaborador.gestionar': true, 'facturas_colaborador.anular': true, 'facturas_colaborador.pagar': true,
+    // Diplomas de Certifex (#223): verlos. El admin además los maneja, por su rol.
+    'diplomas.view': true,
   },
   gestor: {
     'leads.read': true,    'leads.create': true,    'leads.update': true,
@@ -74,6 +76,8 @@ export const PERMISSION_RESOURCES: ReadonlyArray<PermissionResource> = [
   { key: 'accounting',  label: 'Contabilidad', actions: ['read', 'update'] },
   { key: 'tasks',       label: 'Tareas',      actions: ['view_all', 'view_own', 'create', 'assign', 'edit', 'delete', 'close', 'manage'] },
   { key: 'facturas_colaborador', label: 'Facturas de colaboradores', actions: ['ver_todas', 'gestionar', 'anular', 'pagar', 'subir'] },
+  // #223: ver la pantalla Diplomas en solo lectura. Manejarla sigue siendo del admin.
+  { key: 'diplomas',    label: 'Diplomas (Certifex)', actions: ['view'] },
 ];
 
 export const FIXED_ROLES: ReadonlyArray<FixedRole> = [
