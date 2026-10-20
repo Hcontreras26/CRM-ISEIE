@@ -12,7 +12,11 @@ import { MagnifyingGlass, X } from '@phosphor-icons/react';
 // «Neuropsicología y Logopedia», que es como la gente recuerda los titulos —por
 // dos palabras, no por el nombre exacto ni por el orden—.
 
-export interface CursoElegible { id: number; nombre: string; precio?: string | number }
+// `nota`, si viene, va a la derecha en vez del precio y también se busca en ella: es
+// el campus de cada curso en «Añadir formación» (#223), «ISEIE · 1200,00 €».
+export interface CursoElegible { id: number; nombre: string; precio?: string | number | null; nota?: string }
+
+const aLaDerecha = (c: CursoElegible) => (c.nota != null ? c.nota : c.precio != null ? euros(c.precio) : '');
 
 const sinAcentos = (s: string) =>
   String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -52,9 +56,9 @@ export default function BuscadorCurso({
   const casa = useMemo(() => {
     const t = sinAcentos(texto).trim();
     const trozos = t ? t.split(/\s+/) : [];
-    return (c: { nombre: string }) => {
+    return (c: { nombre: string; nota?: string }) => {
       if (!trozos.length) return true;
-      const n = sinAcentos(c.nombre);
+      const n = sinAcentos(`${c.nombre} ${c.nota ?? ''}`);
       return trozos.every((p) => n.includes(p));
     };
   }, [texto]);
@@ -85,8 +89,8 @@ export default function BuscadorCurso({
     return (
       <div className="flex items-center gap-2 h-9 px-3 rounded-md border border-border bg-background text-sm">
         <span className="flex-1 truncate">{elegido.nombre}</span>
-        {elegido.precio != null && (
-          <span className="text-xs text-muted-foreground tabular-nums shrink-0">{euros(elegido.precio)}</span>
+        {aLaDerecha(elegido) && (
+          <span className="text-xs text-muted-foreground tabular-nums shrink-0">{aLaDerecha(elegido)}</span>
         )}
         <button type="button" onClick={() => onElegir(null)} aria-label="Quitar"
           className="text-muted-foreground hover:text-foreground shrink-0">
@@ -138,8 +142,8 @@ export default function BuscadorCurso({
                     i === resaltado ? 'bg-primary/10' : 'hover:bg-muted/50'
                   }`}>
                   <span className="flex-1 truncate">{c.nombre}</span>
-                  {c.precio != null && (
-                    <span className="text-[11px] text-muted-foreground tabular-nums shrink-0">{euros(c.precio)}</span>
+                  {aLaDerecha(c) && (
+                    <span className="text-[11px] text-muted-foreground tabular-nums shrink-0">{aLaDerecha(c)}</span>
                   )}
                 </button>
               ))}

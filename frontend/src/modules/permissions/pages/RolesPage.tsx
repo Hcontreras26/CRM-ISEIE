@@ -8,6 +8,7 @@ import usePermission, {
   ROLE_DEFAULT_PERMISSIONS,
 } from '@/shared/hooks/usePermission';
 import PermisosTareas from '../components/PermisosTareas';
+import PermisoDiplomas from '../components/PermisoDiplomas';
 import type { UserRole } from '@/shared/types';
 import * as api from '../api/permissions.api';
 import type { CustomRole } from '../api/permissions.api';
@@ -34,6 +35,11 @@ const ROLES_CON_TABLERO: ReadonlyArray<{ key: string; label: string; desc: strin
 // project manager y tutor no tienen tablero (Diego, 09/10). Igual que el servidor.
 const editaTareas = (key: string) => key === 'admin' || key === 'colaborador' || key.startsWith('custom:');
 
+// «Diplomas (Certifex) · Ver» (#223) se da a los roles que no lo tienen por el
+// suyo: admin y superadmin ya lo ven, y tutor y colaborador no pueden. Igual que
+// el servidor (CLAVES_SUELTAS en permissions.service.js).
+const daDiplomas = (key: string) => key === 'gestor' || key === 'soporte' || key.startsWith('custom:');
+
 // Las acciones de Tareas en castellano, en la columna «Otros», y lo que permite
 // cada una al pasar el ratón.
 const ACCION_ES: Record<string, string> = {
@@ -41,6 +47,8 @@ const ACCION_ES: Record<string, string> = {
   create: 'Crear', delete: 'Eliminar', close: 'Aprobar y cerrar', manage: 'Configurar',
   // Facturas de colaboradores (#202), como en MultiCRM.
   ver_todas: 'Ver todas', gestionar: 'Gestionar', anular: 'Anular', pagar: 'Marcar pagada', subir: 'Subir la suya',
+  // Diplomas de Certifex (#223): `diplomas.view`.
+  view: 'Ver',
 };
 const AYUDA: Record<string, string> = {
   'tasks.view_all': 'Ver el tablero de cualquier persona, «Todo el equipo» y sus métricas',
@@ -52,7 +60,7 @@ const AYUDA: Record<string, string> = {
   'tasks.close': 'Aprobar o devolver desde «Por revisar», y cerrar o reabrir una tarea («Hecha»)',
   'tasks.manage': 'Configurar el tablero: columnas, áreas y proyectos propios',
 };
-const etiquetaAccion = (res: string, a: string) => (res === 'tasks' || res === 'facturas_colaborador' ? ACCION_ES[a] || a : a);
+const etiquetaAccion = (res: string, a: string) => (res === 'tasks' || res === 'facturas_colaborador' || res === 'diplomas' ? ACCION_ES[a] || a : a);
 
 interface RoleEntry {
   key: string;
@@ -196,6 +204,10 @@ export default function RolesPage() {
                   <span className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-primary/10 text-primary font-bold">
                     <PencilSimple size={10} /> Tareas editables
                   </span>
+                ) : puedeEditarTareas && daDiplomas(role.key) ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-primary/10 text-primary font-bold">
+                    <PencilSimple size={10} /> Diplomas editable
+                  </span>
                 ) : !role.custom && (
                   <span className="inline-flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-muted font-bold">
                     <Lock size={10} /> Solo lectura
@@ -205,6 +217,14 @@ export default function RolesPage() {
 
               {puedeEditarTareas && editaTareas(role.key) && (
                 <PermisosTareas roleKey={role.key} />
+              )}
+
+              {puedeEditarTareas && daDiplomas(role.key) && (
+                <PermisoDiplomas
+                  roleKey={role.key}
+                  rolLabel={role.label}
+                  puedeCambiarRol={tieneRol('superadmin')}
+                />
               )}
 
               {/* Desktop table */}
@@ -299,7 +319,8 @@ export default function RolesPage() {
 
               <p className="text-[11px] text-muted-foreground italic pt-2">
                 Los permisos de los roles fijos están codificados en `ROLE_DEFAULT_PERMISSIONS` y no se pueden modificar,
-                salvo «Aprobar y cerrar» y «Configurar» de Tareas, que el superadmin y el admin cambian arriba (#210).
+                salvo «Aprobar y cerrar» y «Configurar» de Tareas, que el superadmin y el admin cambian arriba (#210), y
+                «Diplomas (Certifex) · Ver» (#223), que se da a una persona o, solo el superadmin, a un rol entero.
                 Para crear roles con permisos custom espera CRM-228.
               </p>
             </>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback, lazy, Suspense } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import usePermission from '@/shared/hooks/usePermission';
+import { useAuth } from '@/contexts/AuthContext';
 import { useProjectContext } from '@/contexts/ProjectContext';
 import client from '@/shared/api/client';
 import PageHeader from '@/shared/components/ui/PageHeader';
@@ -58,6 +59,12 @@ export default function MatriculasPage() {
   // las ve también soporte.
   const verEmisiones = tieneRol('superadmin', 'admin');
   const verConsultas = tieneRol('superadmin', 'admin', 'soporte');
+  // Diplomas: administración los maneja; quien tenga `diplomas.view` (#223) los VE,
+  // en solo lectura y con sus campus. Es la misma regla que la API, y por eso se mira
+  // el mapa del servidor y no `can()`, que aquí deja pasar a soporte por su rol.
+  const { permissions } = useAuth() as { permissions?: Record<string, boolean> | null };
+  const verDiplomas = verEmisiones || permissions?.['diplomas.view'] === true;
+  const diplomasSoloLectura = !verEmisiones;
   const vistaCert = params.get('vista') === 'consultas' || !verEmisiones ? 'consultas' : 'emisiones';
   const [data, setData] = useState([]);
   const [stats, setStats] = useState<{ total: number; pendientes: number; validadas: number; rechazadas: number }>({ total: 0, pendientes: 0, validadas: 0, rechazadas: 0 });
@@ -151,7 +158,7 @@ export default function MatriculasPage() {
             <Certificate size={14} /> Certificaciones
           </button>
         )}
-        {CERTIFEX_PANEL && verEmisiones && (
+        {CERTIFEX_PANEL && verDiplomas && (
           <button
             ref={pestanaDiplomas}
             aria-current={enDiplomas ? 'page' : undefined}
@@ -164,11 +171,11 @@ export default function MatriculasPage() {
       </div>
 
       {enDiplomas ? (
-        !verEmisiones ? (
-          <EmptyState icon={SealCheck} title="Solo administración" description="Los diplomas los aprueba, envía y revoca administración." />
+        !verDiplomas ? (
+          <EmptyState icon={SealCheck} title="Solo administración" description="Los diplomas los aprueba, envía y revoca administración. Para verlos, pide que te den «Diplomas (Certifex) · Ver»." />
         ) : (
           <Suspense fallback={<SkeletonTable rows={5} columns={6} />}>
-            <CertifexDiplomasPage />
+            <CertifexDiplomasPage soloLectura={diplomasSoloLectura} />
           </Suspense>
         )
       ) : enCertificaciones ? (

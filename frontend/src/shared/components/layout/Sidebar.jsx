@@ -193,9 +193,10 @@ export const NAV_SECTIONS = [
       { to: '/leads/duplicados', label: 'Buscar duplicados', icon: CopySimple, roles: ['admin', 'superadmin'] },
       { to: '/matriculas', label: 'Matrículas', icon: UserCheck },
       // Diplomas de Certifex (#272): lo que piden los alumnos desde Moodle, aprobarlo,
-      // enviarlo y revocarlo. Solo administración, como en MultiCRM. Se enciende por
+      // enviarlo y revocarlo. Administración, como en MultiCRM, y además, para VERLO en
+      // solo lectura, quien tenga `diplomas.view` (#223, `oPermiso`). Se enciende por
       // configuración, como Certificaciones (VITE_CERTIFEX_PANEL).
-      ...(CERTIFEX_PANEL ? [{ to: '/matriculas/diplomas', label: 'Diplomas', icon: Certificate, roles: ['superadmin', 'admin'] }] : []),
+      ...(CERTIFEX_PANEL ? [{ to: '/matriculas/diplomas', label: 'Diplomas', icon: Certificate, roles: ['superadmin', 'admin'], oPermiso: 'diplomas.view' }] : []),
     ],
   },
   {
@@ -255,9 +256,15 @@ export function tieneAccesoMcp(role, permisos) {
   return permisos?.usa_mcp === true;
 }
 
-function canSeeItem(item, role, soloColaboraciones, permisos) {
+//
+// `can` es el de usePermission: lo usa `oPermiso`, una entrada que se ve por su rol
+// O por un permiso del sistema de Roles (Diplomas, #223), como en MultiCRM.
+export function canSeeItem(item, role, soloColaboraciones, permisos, can) {
   const roles = Array.isArray(role) ? role.filter(Boolean) : [role].filter(Boolean);
   const es = (...r) => r.some((x) => roles.includes(x));
+  // «Por su rol o porque se le ha dado»: quien tiene el permiso la ve aunque su rol
+  // no esté en `roles`. Lo que ve dentro lo recorta la pantalla (y la API).
+  const porPermiso = Boolean(item.oPermiso && typeof can === 'function' && can(item.oPermiso) === true);
   if (item.apagable && APAGADOS.includes(item.apagable)) return false;
   // MCP de Claude: super admin y admin por su rol; el resto solo con la casilla.
   // Va ANTES del atajo de soporte y del recorte del tutor: «roles únicamente».
@@ -286,8 +293,9 @@ function canSeeItem(item, role, soloColaboraciones, permisos) {
     //
     // Van las TRES del apartado. «Mis cursos» no: esa es la de un tutor
     // mirando lo suyo, no la de quien los organiza.
+    // Y lo que se le haya dado a propósito (`oPermiso`, #223).
     return ['/tutores', '/tutores/sin-tutor', '/tutores/comisiones', '/preferencias']
-      .includes(item.to);
+      .includes(item.to) || porPermiso;
   }
 
   // Un permiso acotado manda sobre el rol.
@@ -304,7 +312,7 @@ function canSeeItem(item, role, soloColaboraciones, permisos) {
 
   if (!item.roles) return true;
   if (es('superadmin', 'soporte')) return true;
-  return item.roles.some((r) => roles.includes(r));
+  return item.roles.some((r) => roles.includes(r)) || porPermiso;
 }
 
 /**
@@ -389,10 +397,10 @@ export function NavItem({ to, label, icon: Icon, end, comingSoon, collapsed, onC
 // Una entrada con lo suyo escalonado debajo. Se abre y se cierra, y lo de
 // dentro se sangra con una guia a la izquierda para que se vea de un vistazo
 // que pertenece a ella.
-function NavGroup({ label, icon: Icon, items, defaultOpen, role, soloColab, permisos, collapsed, onNavigate, onExpandSidebar }) {
+function NavGroup({ label, icon: Icon, items, defaultOpen, role, soloColab, permisos, can, collapsed, onNavigate, onExpandSidebar }) {
   const location = useLocation();
   const visible = items
-    .filter((c) => canSeeItem(c, role, soloColab, permisos))
+    .filter((c) => canSeeItem(c, role, soloColab, permisos, can))
     .map((c) => ({ ...c, comingSoon: c.comingSoon || !isBetaAllowed(c.to) }));
   const hasActiveChild = visible.some(
     (c) => !c.comingSoon && (location.pathname === c.to || location.pathname.startsWith(c.to + '/'))
@@ -477,7 +485,7 @@ function defaultOpenSections(sections, pathname) {
   return out;
 }
 
-function CollapsibleNav({ sections, role, soloColab, permisos, collapsed, onNavigate, onExpandSidebar }) {
+function CollapsibleNav({ sections, role, soloColab, permisos, can, collapsed, onNavigate, onExpandSidebar }) {
   const location = useLocation();
   const STORAGE_KEY = 'crm-sidebar-sections-v1';
   const [openMap, setOpenMap] = useState(() => {
@@ -521,7 +529,7 @@ function CollapsibleNav({ sections, role, soloColab, permisos, collapsed, onNavi
             }
             return it;
           })
-          .filter((it) => canSeeItem(it, role, soloColab, permisos))
+          .filter((it) => canSeeItem(it, role, soloColab, permisos, can))
           // Una entrada con hijos no tiene ruta que mirar: lo de BETA lo decide
           // cada hijo por su cuenta, dentro de NavGroup.
           .map((it) => (it.children ? it : { ...it, comingSoon: it.comingSoon || !isBetaAllowed(it.to) }));
@@ -536,6 +544,7 @@ function CollapsibleNav({ sections, role, soloColab, permisos, collapsed, onNavi
             defaultOpen={item.defaultOpen}
             soloColab={soloColab}
             permisos={permisos}
+            can={can}
             role={role}
             collapsed={collapsed}
             onNavigate={onNavigate}
@@ -703,6 +712,7 @@ export default function Sidebar({ collapsed = false, onToggleCollapsed, onNaviga
         soloColab={user?.gestor_colaboraciones === true
           && !['superadmin', 'admin', 'soporte'].includes(role)}
         permisos={user}
+        can={can}
         collapsed={collapsed}
         onNavigate={onNavigate}
         onExpandSidebar={onToggleCollapsed}
