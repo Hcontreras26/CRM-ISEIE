@@ -1,9 +1,13 @@
 import { Router } from 'express';
 import { verifyToken, roleGuard } from '../../shared/middleware/auth.js';
+import { uploadImage } from '../../shared/middleware/upload.js';
 import * as ctrl from './project.controller.js';
 import * as shortcutsCtrl from './shortcuts.controller.js';
 
 const router = Router();
+
+// GET /:id/logo es publico (sin auth) para que se cargue en <img>
+router.get('/:id/logo', ctrl.getLogo);
 
 router.use(verifyToken);
 
@@ -22,6 +26,10 @@ router.get('/:id', ctrl.getById);
 router.post('/', roleGuard('superadmin'), ctrl.create);
 router.patch('/:id', roleGuard('superadmin'), ctrl.update);
 router.post('/:id/regenerate-webhook-key', roleGuard('superadmin'), ctrl.regenerateKey);
+
+// Subida y borrado de logo de campus (Diego, #203 / #222)
+router.post('/:id/logo', roleGuard('admin', 'superadmin'), uploadImage, ctrl.uploadLogo);
+router.delete('/:id/logo', roleGuard('admin', 'superadmin'), ctrl.deleteLogo);
 
 // Round-robin: estado de la cola de gestores (cualquier autenticado)
 router.get('/:id/queue-state', shortcutsCtrl.getQueueState);

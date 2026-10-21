@@ -11,6 +11,8 @@ import client from '@/shared/api/client';
 import { toast } from '@/shared/hooks/useToast';
 import { useConfirm } from '@/shared/components/ui/useConfirm';
 import MarcaSection from './MarcaSection';
+import ProjectsTab from '@/modules/settings/components/settings/ProjectsTab';
+import { Buildings } from '@phosphor-icons/react';
 import CampusPorEmpresa, { marcarVarios } from '@/shared/components/CampusPorEmpresa';
 import { avisoCambioCorreo, confirmacionCambioCorreo, problemaDeContrasena } from '@/shared/lib/credenciales';
 
@@ -18,6 +20,7 @@ import { avisoCambioCorreo, confirmacionCambioCorreo, problemaDeContrasena } fro
 // icono de "abrir en otra página" y al hacer click navega a esa ruta.
 // Si `to` no está definido es una sección embebida controlada por `tab`.
 const NAV = [
+  { id: 'projects',     label: 'Proyectos',         icon: Buildings,   embedded: true },
   { id: 'users',        label: 'Usuarios',          icon: Users,       embedded: true },
   { id: 'availability', label: 'Disponibilidad',    icon: Calendar,    embedded: true },
   { label: 'Roles y permisos',     icon: ShieldCheck,    to: '/roles' },
@@ -126,6 +129,11 @@ export default function SettingsPage() {
 
         {/* Content */}
         <div className="min-w-0 space-y-4">
+          {tab === 'projects' && (
+            <div className="space-y-6">
+              <ProjectsTab />
+            </div>
+          )}
           {tab === 'users' && (
             <UsersSection isAdmin={isAdmin} />
           )}

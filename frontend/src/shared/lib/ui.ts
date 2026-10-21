@@ -65,3 +65,14 @@ export function getInitials(name: string | null | undefined): string {
     .toUpperCase()
     .slice(0, 2);
 }
+
+/**
+ * Lo mismo, pero cuando lo que identifica es un nombre y no un número — las
+ * marcas. El color sale del propio nombre, así que ISECD es verde hoy y verde
+ * mañana: la memoria visual funciona porque el color no cambia.
+ */
+export function avatarColorForName(nombre = ''): string {
+  let n = 0;
+  for (const ch of String(nombre)) n = (n * 31 + ch.charCodeAt(0)) % 9973;
+  return AVATAR_COLORS[n % AVATAR_COLORS.length];
+}
