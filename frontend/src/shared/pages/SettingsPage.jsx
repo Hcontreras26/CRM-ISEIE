@@ -254,13 +254,21 @@ function UsersSection({ isAdmin }) {
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">Usuario</th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">Rol</th>
                 <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">Estado</th>
-                {isAdmin && <th className="sticky right-0 bg-card bg-gradient-to-r from-muted/50 to-muted/50 border-l border-border/40 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)] px-4 py-2.5 text-right text-xs font-medium text-muted-foreground whitespace-nowrap">Acciones</th>}
+                {/* Fija a la derecha (#202, gemela de CRM#221): Editar y Desactivar siempre a
+                    la vista. Fondo opaco (el de la tarjeta con el gris de la cabecera encima) y
+                    borde con el token del CRM, sin colores a mano. */}
+                {isAdmin && <th className="sticky right-0 bg-card bg-gradient-to-r from-muted/50 to-muted/50 border-l border-border px-4 py-2.5 text-right text-xs font-medium text-muted-foreground whitespace-nowrap">Acciones</th>}
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className={`group border-b border-border last:border-0 hover:bg-muted/50 transition-colors ${!u.active ? 'opacity-50' : ''}`}>
-                  <td className="px-4 py-3">
+              {users.map((u) => {
+                // Un usuario desactivado se atenúa celda a celda: con la opacidad en la
+                // fila, también la celda fija quedaba al 50 % y lo que pasa por debajo se
+                // transparentaba (#202).
+                const apagada = !u.active ? 'opacity-50' : '';
+                return (
+                <tr key={u.id} className="group border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
+                  <td className={`px-4 py-3 ${apagada}`}>
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
                         {String(u.nombre || '?').trim().charAt(0).toUpperCase()}
@@ -271,20 +279,21 @@ function UsersSection({ isAdmin }) {
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className={`px-4 py-3 whitespace-nowrap ${apagada}`}>
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${ROLE_BADGE[u.role] || 'bg-muted'}`}>
                       <ShieldCheck size={10} weight="bold" /> {comoSeLlama(u)}
                     </span>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className={`px-4 py-3 whitespace-nowrap ${apagada}`}>
                     <span className={`text-[11px] font-semibold ${u.active ? 'text-emerald-600' : 'text-muted-foreground'}`}>
                       {u.active ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>
                   {isAdmin && (
-                    <td className="sticky right-0 bg-card group-hover:bg-gradient-to-r group-hover:from-muted/50 group-hover:to-muted/50 border-l border-border/40 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)] px-4 py-3 text-right whitespace-nowrap">
+                    <td className="sticky right-0 bg-card group-hover:bg-gradient-to-r group-hover:from-muted/50 group-hover:to-muted/50 border-l border-border px-4 py-3 text-right whitespace-nowrap">
+                      {/* La celda, siempre opaca; atenuados solo los botones. */}
                       {u.role !== 'superadmin' && (
-                        <div className="inline-flex gap-1.5 flex-shrink-0">
+                        <div className={`inline-flex gap-1.5 flex-shrink-0 ${apagada}`}>
                           <button onClick={() => setEditingUser(u)}
                             className="text-xs font-medium px-2.5 py-1 rounded border border-border hover:bg-muted transition-colors">
                             Editar
@@ -298,7 +307,8 @@ function UsersSection({ isAdmin }) {
                     </td>
                   )}
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

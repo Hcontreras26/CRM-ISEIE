@@ -35,6 +35,14 @@ vi.mock('@/shared/api/client', () => ({
               active: true,
               empresa_ids: [1],
             },
+            {
+              id: 2,
+              nombre: 'Usuaria Desactivada',
+              email: 'usuaria.desactivada.con.correo.largo@empresa.com',
+              role: 'gestor',
+              active: false,
+              empresa_ids: [1],
+            },
           ],
         });
       }
@@ -96,5 +104,41 @@ describe('SettingsPage UsersSection scroll y responsive (#202)', () => {
     await screen.findByRole('table');
     const bloquesTruncados = container.querySelectorAll('td div.truncate');
     expect(bloquesTruncados.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('un usuario desactivado se atenúa celda a celda: la columna fija de Acciones queda opaca', async () => {
+    render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>
+    );
+
+    const nombre = await screen.findByText('Usuaria Desactivada');
+    const fila = nombre.closest('tr');
+    // Con la opacidad en la fila, la celda fija quedaba al 50 % y lo que pasa por
+    // debajo se transparentaba.
+    expect(fila.className).not.toContain('opacity-');
+    const celdas = [...fila.querySelectorAll('td')];
+    const fija = celdas[celdas.length - 1];
+    expect(fija.className).toContain('sticky');
+    expect(fija.className).toContain('bg-card');
+    expect(fija.className).not.toContain('opacity-');
+    for (const td of celdas.slice(0, -1)) expect(td.className).toContain('opacity-50');
+  });
+
+  it('sin colores a mano en la columna fija: el borde es el token del CRM', async () => {
+    const { container } = render(
+      <MemoryRouter>
+        <SettingsPage />
+      </MemoryRouter>
+    );
+
+    await screen.findByRole('table');
+    const fijas = container.querySelectorAll('.sticky.right-0');
+    expect(fijas.length).toBeGreaterThanOrEqual(2);
+    for (const el of fijas) {
+      expect(el.className).not.toMatch(/rgba?\(|#[0-9a-f]{3,6}\b/i);
+      expect(el.className).toContain('border-border');
+    }
   });
 });
