@@ -150,7 +150,7 @@ export default function SettingsPage() {
 function SectionHeader({ title, subtitle, action }) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <div>
+      <div className="min-w-0">
         <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
         {subtitle && <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>}
       </div>
@@ -226,7 +226,7 @@ function UsersSection({ isAdmin }) {
             onClick={() => setShowInvite(true)}
             disabled={!isAdmin}
             title={!isAdmin ? 'Necesitas rol admin' : undefined}
-            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
           >
             <Plus size={14} weight="bold" />
             Invitar usuario
@@ -247,50 +247,50 @@ function UsersSection({ isAdmin }) {
           </p>
         </div>
       ) : (
-        <div className="rounded-2xl border border-border bg-card overflow-hidden">
+        <div className="rounded-2xl border border-border bg-card overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 border-b border-border">
               <tr>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Usuario</th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Rol</th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground">Estado</th>
-                {isAdmin && <th className="px-4 py-2.5 text-right text-xs font-medium text-muted-foreground">Acciones</th>}
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">Usuario</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">Rol</th>
+                <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground whitespace-nowrap">Estado</th>
+                {isAdmin && <th className="sticky right-0 bg-card bg-gradient-to-r from-muted/50 to-muted/50 border-l border-border/40 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)] px-4 py-2.5 text-right text-xs font-medium text-muted-foreground whitespace-nowrap">Acciones</th>}
               </tr>
             </thead>
             <tbody>
               {users.map((u) => (
-                <tr key={u.id} className={`border-b border-border last:border-0 ${!u.active ? 'opacity-50' : ''}`}>
+                <tr key={u.id} className={`group border-b border-border last:border-0 hover:bg-muted/50 transition-colors ${!u.active ? 'opacity-50' : ''}`}>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
                         {String(u.nombre || '?').trim().charAt(0).toUpperCase()}
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 max-w-[200px]" title={u.nombre || undefined}>
                         <div className="font-medium truncate">{u.nombre}</div>
                         <div className="text-xs text-muted-foreground truncate">{u.email}</div>
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold ${ROLE_BADGE[u.role] || 'bg-muted'}`}>
                       <ShieldCheck size={10} weight="bold" /> {comoSeLlama(u)}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`text-[11px] font-semibold ${u.active ? 'text-emerald-600' : 'text-muted-foreground'}`}>
                       {u.active ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>
                   {isAdmin && (
-                    <td className="px-4 py-3 text-right">
+                    <td className="sticky right-0 bg-card group-hover:bg-gradient-to-r group-hover:from-muted/50 group-hover:to-muted/50 border-l border-border/40 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.04)] px-4 py-3 text-right whitespace-nowrap">
                       {u.role !== 'superadmin' && (
-                        <div className="inline-flex gap-1.5">
+                        <div className="inline-flex gap-1.5 flex-shrink-0">
                           <button onClick={() => setEditingUser(u)}
-                            className="text-xs font-medium px-2.5 py-1 rounded border border-border hover:bg-muted">
+                            className="text-xs font-medium px-2.5 py-1 rounded border border-border hover:bg-muted transition-colors">
                             Editar
                           </button>
                           <button onClick={() => toggleActive(u)}
-                            className="text-xs font-medium px-2.5 py-1 rounded border border-border hover:bg-muted">
+                            className="text-xs font-medium px-2.5 py-1 rounded border border-border hover:bg-muted transition-colors">
                             {u.active ? 'Desactivar' : 'Reactivar'}
                           </button>
                         </div>
