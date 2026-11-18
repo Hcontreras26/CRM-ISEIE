@@ -164,7 +164,9 @@ describe('2. Finanzas › Dashboard (GET /api/accounting/dashboard)', () => {
     expect(d.ingresos.total_facturado).toBe(500);
     expect(d.ingresos.total_emitido).toBe(120);
     expect(d.cuentas_por_cobrar.map((c) => Number(c.id))).toEqual([V.L1]);
-    expect(d.cuentas_por_cobrar_resumen).toMatchObject({ num: 1, total: 500 });
+    // 500 vendidos − 100 cobrados. Lo cobrado sale de los pagos (#411), no del
+    // `importe_pagado` guardado, que aquí se inserta a 0 a propósito.
+    expect(d.cuentas_por_cobrar_resumen).toMatchObject({ num: 1, total: 400 });
     expect(d.egresos).toMatchObject({ total: 0, num_egresos: 0, por_categoria: [] });
     expect(d.balance).toBeNull();
     expect(d.solo_administracion).toEqual(['egresos', 'balance']);
