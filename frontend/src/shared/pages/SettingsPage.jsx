@@ -25,6 +25,7 @@ import { avisoDeLoQueFalta } from '@/shared/lib/loQueFalta';
 import { useEscapeKey } from '@/shared/hooks/useDialogA11y';
 import BrevoBloqueoAviso from '@/modules/settings/components/BrevoBloqueoAviso';
 import { desbloquearBrevo, listBrevoBloqueos, porPersona, textoDelBloqueo } from '@/shared/lib/brevoBloqueo';
+import VerComoFunciona from '@/shared/components/ui/VerComoFunciona';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 import { listRolesAsignables, mensajeNoLoTienes, motivoNoAsignable, NOMBRE_ROL, porRol } from '@/shared/lib/rolesAsignables';
@@ -285,6 +286,9 @@ function UsersSection({ isAdmin }) {
         title="Usuarios"
         subtitle="Invita gestores, admins y soporte. Cada uno con su rol y disponibilidad."
         action={
+          <div className="flex flex-wrap items-center justify-end gap-2">
+          {/* Probar los correos bloqueados en Brevo (CRM#856 / ISEIE#522): solo al pulsarlo. */}
+          <VerComoFunciona id="brevo-bloqueados" texto="Correos bloqueados" />
           <button
             onClick={() => setShowInvite(true)}
             disabled={!isAdmin}
@@ -294,6 +298,7 @@ function UsersSection({ isAdmin }) {
             <Plus size={14} weight="bold" />
             Invitar usuario
           </button>
+          </div>
         }
       />
 
@@ -347,7 +352,7 @@ function UsersSection({ isAdmin }) {
                       {u.active ? 'Activo' : 'Inactivo'}
                     </span>
                     {bloqueosBrevo.get(u.id) && (
-                      <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-destructive" title={textoDelBloqueo(bloqueosBrevo.get(u.id))}>
+                      <span className="mt-0.5 flex items-center gap-1 text-[11px] font-semibold text-destructive" title={textoDelBloqueo(bloqueosBrevo.get(u.id))} data-recorrido="brevo-marca">
                         <span className="w-1.5 h-1.5 rounded-full bg-destructive flex-shrink-0" />
                         Correo bloqueado en Brevo
                       </span>
